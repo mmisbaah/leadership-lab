@@ -339,3 +339,85 @@ html.neu .tips kbd, html.neu .help kbd { background: var(--paper); }
 @media (max-width: 860px) { .wk { text-align: left; } }
 .lesson.pres .stage { justify-content: center; }
 .lesson.pres .stage .body { flex: 0 1 auto; }
+
+/* ── Slide layouts added with the full decks ── */
+.stage.section { justify-content: center; }
+.stage.section .body { justify-content: flex-end; }
+.stage h3.big { font-size: clamp(1.8rem, 6cqw, 3.6rem); line-height: 1.05; max-width: 22ch; }
+.stage.statement .body, .stage.discuss .body { justify-content: center; }
+.stage .lede.prompt { font-size: clamp(1.2rem, 3.4cqw, 2rem); color: var(--s-ink); }
+.stage .badge { align-self: flex-start; font-family: var(--f-display); font-size: .85rem; letter-spacing: .14em; text-transform: uppercase; color: var(--s-bg); background: var(--s-brass); border-radius: 6px; padding: 3px 10px; }
+.s-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.s-cards div { background: var(--s-panel); border: 1px solid var(--s-line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.s-cards b { font-family: var(--f-display); font-size: clamp(1.1rem, 2.6cqw, 1.45rem); letter-spacing: .01em; color: var(--s-brass); line-height: 1.1; }
+.s-cards span { color: var(--s-ink); font-size: clamp(.92rem, 1.8cqw, 1.05rem); }
+.s-flow p { margin-top: 6px; color: var(--s-dim); font-size: clamp(.9rem, 1.8cqw, 1.02rem); }
+.s-cmp { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@container (max-width: 520px) { .s-cmp { grid-template-columns: 1fr; } }
+.s-cmp > div { background: var(--s-panel); border: 1px solid var(--s-line); border-radius: 10px; padding: 14px 16px; border-top: 4px solid var(--s-bad); }
+.s-cmp > div.yes { border-top-color: var(--s-ok); }
+.s-cmp b { font-family: var(--f-display); font-size: clamp(1.1rem, 2.6cqw, 1.5rem); letter-spacing: .04em; text-transform: uppercase; }
+.s-cmp .no b { color: var(--s-bad); } .s-cmp .yes b { color: var(--s-ok); }
+.s-cmp ul { margin-top: 8px; padding-left: 18px; display: grid; gap: 6px; font-size: clamp(.95rem, 1.9cqw, 1.1rem); }
+.lesson.pres .s-cards span, .lesson.pres .s-cmp ul, .lesson.pres .s-flow p { font-size: clamp(1rem, 1.5vw, 1.4rem); }
+.lesson.pres .stage h3.big { font-size: clamp(2.2rem, 5vw, 4.6rem); }
+.thumbs button { max-width: 200px; }
+
+/* Previews and the presenter's slide must not react to clicks or animate. */
+.still, .still * { animation: none !important; transition: none !important; pointer-events: none; }
+
+/* ── Presenter view (laptop): current slide, notes, timer, next slide ── */
+.lesson.presenter { overflow: hidden; }
+.lesson.presenter .lesson-head { display: none; }
+.lesson.presenter .lesson-body { max-width: none; padding: 0; }
+.pv { position: fixed; inset: 0; z-index: 5; background: var(--paper); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(16px, env(safe-area-inset-left, 0px)); }
+.pv-top { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; }
+.pv-top .ttl { flex: 1 1 220px; min-width: 0; }
+.pv-top .ttl .k { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: var(--brass); }
+.pv-top .ttl b { display: block; font-family: var(--f-display); font-size: 1.3rem; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-clock { display: flex; align-items: baseline; gap: 8px; }
+.pv-clock b { font-family: var(--f-mono); font-size: 1.5rem; }
+.pv-clock small, .pv-link { font-size: .76rem; color: var(--ink-2); }
+.pv-link::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); margin-right: 6px; }
+.pv-link.on::before { background: var(--ok); }
+.pv-main { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); gap: 16px; min-height: 0; }
+.pv-cur { min-height: 0; display: flex; }
+.pv-cur .stage { flex: 1; min-height: 0; overflow-y: auto; }
+.pv-side { min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 2px 4px 4px; }
+.pv-side .panel { padding: 14px 16px; gap: 8px; }
+.pv-time { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .85rem; color: var(--ink-2); }
+.pv-time b { font-family: var(--f-mono); font-size: 1.1rem; color: var(--ink); }
+.pv-time.over #pvPace { color: var(--bad); font-weight: 700; }
+.pv-notes { font-size: 1.05rem; line-height: 1.55; }
+.note.ans { border-left-color: var(--ok); }
+.pv-next .stage { min-height: 0; padding: 14px; gap: 8px; border-radius: 8px; }
+.pv-next .stage .kid { display: none; }
+.pv-help { font-size: .8rem; color: var(--ink-2); }
+html.neu .pv-cur .stage { box-shadow: var(--raise); }
+@media (max-width: 860px) {
+  .lesson.presenter { overflow-y: auto; }
+  .pv { position: static; display: flex; flex-direction: column; min-height: 100%; }
+  .pv-main { grid-template-columns: 1fr; }
+  .pv-cur .stage { min-height: 360px; }
+}
+
+/* ── Projector window: only the slide, filling the screen ── */
+body.projector { background: #0B1528; overflow: hidden; }
+.proj { position: fixed; inset: 0; display: flex; padding: 12px; }
+.proj .stage { flex: 1; min-height: 0; overflow-y: auto; justify-content: center; }
+.proj .stage .body { flex: 0 1 auto; }
+.proj .stage h3 { font-size: clamp(2rem, 4.4vw, 4rem); }
+.proj .stage.cover h3 { font-size: clamp(2.6rem, 7vw, 6rem); }
+.proj .stage h3.big { font-size: clamp(2.2rem, 5vw, 4.6rem); }
+.proj .stage .lede, .proj .s-list li, .proj .qk-b, .proj .qbox p, .proj .s-cards span, .proj .s-cmp ul, .proj .s-flow p { font-size: clamp(1.05rem, 1.7vw, 1.6rem); }
+.proj .kid { font-size: clamp(1rem, 1.4vw, 1.4rem); }
+.proj-hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: rgba(0,0,0,.6); color: #fff; padding: 8px 14px; border-radius: 8px; font-size: .85rem; pointer-events: none; }
+.pv-cur .stage { justify-content: center; }
+.pv-cur .stage .body { flex: 0 1 auto; }
+.outline { columns: 2 240px; column-gap: 24px; padding-left: 22px; font-size: .9rem; }
+.outline li { break-inside: avoid; padding: 2px 0; color: var(--ink-3); }
+.outline li.part { font-weight: 700; }
+.outline .link { font-weight: inherit; text-align: left; color: var(--ink); font-size: .9rem; }
+.outline .link:hover { color: var(--brass); }
+.outline .link { display: inline; }
