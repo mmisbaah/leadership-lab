@@ -415,6 +415,8 @@ const stepsOf = s => s.t === 'points' ? s.items.length : s.t === 'scenario' && s
 const ALL = 99;
 // Phase accents, brightened for the navy slide background.
 const PH_NAVY = { SELF: '#6E9FD8', PEOPLE: '#5FB3A9', PERFORMANCE: '#D49A5C', INTEGRATE: '#A68BD3', APPLY: '#6CBF8C' };
+// The same accents, darkened for the light slide theme.
+const PH_LIGHT = { SELF: '#2C5A8C', PEOPLE: '#2E7067', PERFORMANCE: '#8A5A2B', INTEGRATE: '#6A4C8C', APPLY: '#2F6B45' };
 const celebrate = () => { try { return /[?&]confetti=1/.test(location.search) || localStorage.getItem('ll-confetti') === 'on'; } catch { return false; } };
 const thumbLabel = (l, s) => s.t === 'cover' ? 'Title' : s.t === 'check' ? 'Quick check' : s.t === 'section' ? `${s.k}: ${s.h}` : s.h || s.k;
 const sessLabel = l => l.mock ? esc(l.title) : `Session ${l.n} · ${esc(l.title)}`;
@@ -480,7 +482,7 @@ const chevron = (j, last) => `<svg viewBox="0 0 400 120" preserveAspectRatio="no
 // One slide. opts: i, picks, step (points revealed), reveal ('hide' for the audience, 'ghost' for the presenter),
 // still (preview: no interaction), fit ('width', 'box', 'page' or a fixed scale).
 function slideHTML(l, { i, picks = {}, step = ALL, reveal = 'hide', still = false, fit = 'width' }) {
-  const d = deckOf(l), s = d[i], ph = PH_NAVY[s.ph || l.phase] || PH_NAVY.SELF;
+  const d = deckOf(l), s = d[i], phase = PH_NAVY[s.ph || l.phase] ? s.ph || l.phase : 'SELF', ph = PH_NAVY[phase], phl = PH_LIGHT[phase];
   const vis = j => j < step ? '' : reveal === 'ghost' ? ' ghost' : ' hid';
   const kick = s.k ? `<div class="kick">${esc(s.k)}</div>` : '';
   const lede = s.p ? `<p class="lede">${esc(s.p)}</p>` : '';
@@ -513,7 +515,7 @@ function slideHTML(l, { i, picks = {}, step = ALL, reveal = 'hide', still = fals
     }
     default: body = `<div class="kick">Reflection · ${esc(s.h)}</div><div class="cv-center"><h2 class="big">${esc(s.p)}</h2><p class="lede">Write one specific action: the situation, what you will do and when.</p></div>`;
   }
-  return `<div class="frame" data-fit="${fit}"><div class="canvas t-${s.t}${still ? ' still' : ''}" style="--ph:${ph}" ${still ? 'aria-hidden="true"' : 'id="stage"'}>
+  return `<div class="frame" data-fit="${fit}"><div class="canvas t-${s.t}${still ? ' still' : ''}" style="--ph-d:${ph};--ph-l:${phl}" ${still ? 'aria-hidden="true"' : 'id="stage"'}>
     <div class="cv-body">${body}</div>
     <footer class="cv-foot"><span class="mark"><i></i>Leadership Lab</span><span class="sess">${sessLabel(l)}</span>${s.src ? `<span class="src">Source: ${esc(s.src)}</span>` : ''}<span class="num">${pad(i + 1)} / ${pad(d.length)}</span></footer></div></div>`;
 }

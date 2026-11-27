@@ -287,8 +287,8 @@ html.neu .tips kbd, html.neu .help kbd { background: var(--paper); }
    Sizes below are canvas pixels. --s (set by fitText) shrinks body text slightly if a slide would overflow. */
 .stage-wrap { display: flex; flex-direction: column; gap: 12px; }
 .stage-host { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; }
-.frame { position: relative; flex: none; overflow: hidden; border-radius: 10px; background: #0B1528; }
-.canvas { --s: 1; --ph: #6E9FD8; --s-bg: #0E1B33; --s-panel: #172A4B; --s-panel-2: #1E365E; --s-ink: #EEF2F8; --s-dim: #A9B7CC; --s-line: #2C466F;
+.frame { position: relative; flex: none; overflow: hidden; border-radius: 10px; background: var(--frame-bg, #0B1528); }
+.canvas { --s: 1; --ph: var(--ph-d, #6E9FD8); --s-bg: #0E1B33; --s-panel: #172A4B; --s-panel-2: #1E365E; --s-ink: #EEF2F8; --s-dim: #A9B7CC; --s-line: #2C466F;
   --s-brass: #E0AE4C; --s-sea: #3BA3B0; --s-ok: #57C990; --s-bad: #F28C82;
   position: absolute; top: 0; left: 0; width: 1280px; height: 720px; transform-origin: 0 0; overflow: hidden;
   background: radial-gradient(110% 90% at 88% -10%, #1B3561 0%, var(--s-bg) 58%); color: var(--s-ink);
@@ -296,7 +296,7 @@ html.neu .tips kbd, html.neu .help kbd { background: var(--paper); }
 .canvas::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: var(--ph); }
 .cv-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: calc(22px * var(--s)); overflow: hidden; padding-bottom: 20px; }
 .cv-center { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: calc(22px * var(--s)); }
-.cv-foot { flex: none; height: 56px; display: flex; align-items: center; gap: 24px; border-top: 1px solid rgba(255, 255, 255, .09); font-size: 14px; color: var(--s-dim); }
+.cv-foot { flex: none; height: 56px; display: flex; align-items: center; gap: 24px; border-top: 1px solid var(--s-rule, rgba(255, 255, 255, .09)); font-size: 14px; color: var(--s-dim); }
 .cv-foot .mark { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 600; font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: var(--s-ink); }
 .cv-foot .mark i { width: 10px; height: 10px; border-radius: 3px; background: var(--ph); }
 .cv-foot .sess { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -352,8 +352,8 @@ html.neu .tips kbd, html.neu .help kbd { background: var(--paper); }
 .opt-b b { flex: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--s-panel-2); font-family: var(--f-mono); font-weight: 500; font-size: 18px; color: var(--ph); }
 .opt-b:not([disabled]):hover { border-color: var(--ph); }
 .opt-b[disabled] { cursor: default; }
-.opt-b.right { border-color: var(--s-ok); background: #12382B; animation: k-ok .6s ease; } .opt-b.right b { background: var(--s-ok); color: var(--s-bg); }
-.opt-b.wrong { border-color: var(--s-bad); background: #3A1D1F; } .opt-b.wrong b { background: var(--s-bad); color: var(--s-bg); }
+.opt-b.right { border-color: var(--s-ok); background: var(--s-ok-bg, #12382B); animation: k-ok .6s ease; } .opt-b.right b { background: var(--s-ok); color: var(--s-bg); }
+.opt-b.wrong { border-color: var(--s-bad); background: var(--s-bad-bg, #3A1D1F); } .opt-b.wrong b { background: var(--s-bad); color: var(--s-bg); }
 .opt-b.dim { opacity: .45; }
 @keyframes k-ok { 40% { box-shadow: 0 0 0 6px rgba(87, 201, 144, .25); } }
 .fb { display: flex; gap: 16px; align-items: baseline; border-radius: 12px; padding: calc(14px * var(--s)) 22px; font-size: calc(22px * var(--s)); line-height: 1.4; background: rgba(87, 201, 144, .12); border: 1px solid rgba(87, 201, 144, .4); }
@@ -375,7 +375,7 @@ html.neu .tips kbd, html.neu .help kbd { background: var(--paper); }
 .canvas svg .dt.sm { font-size: 28px; }
 .canvas svg .ds { font-size: 19px; fill: var(--s-dim); }
 .canvas svg .dc { font-family: var(--f-display); font-weight: 700; font-size: 18px; letter-spacing: .08em; text-transform: uppercase; fill: var(--s-bg); }
-.canvas svg .vn { stroke-width: 3; fill-opacity: .16; mix-blend-mode: screen; }
+.canvas svg .vn { stroke-width: 3; fill-opacity: .16; mix-blend-mode: var(--s-blend, screen); }
 .canvas svg .v1 { fill: var(--s-brass); stroke: var(--s-brass); }
 .canvas svg .v2 { fill: var(--s-sea); stroke: var(--s-sea); }
 .canvas svg .v3 { fill: var(--ph); stroke: var(--ph); }
@@ -504,3 +504,34 @@ body.printing { background: var(--paper); }
 .canvas svg .q4 { fill: var(--s-dim); stroke: var(--s-line); fill-opacity: .06; }
 .ch-shape span { min-height: 2.12em; display: flex; align-items: center; }
 .t-flow .chev { margin-top: auto; margin-bottom: auto; }
+
+/* ── Light slide theme: used whenever the app is in light mode (slides, full screen, projector, print) ── */
+html[data-theme="light"] .canvas {
+  --ph: var(--ph-l, #2C5A8C);
+  --s-bg: #F8FAFC; --s-panel: #FFFFFF; --s-panel-2: #EDF2F7; --s-ink: #12213B; --s-dim: #4B5870; --s-line: #D2DBE5;
+  --s-brass: #8E6512; --s-sea: #2B7C88; --s-ok: #1B7A4B; --s-bad: #B42318;
+  --s-ok-bg: #E3F3EA; --s-bad-bg: #FBE8E5; --s-rule: rgba(18, 33, 59, .1); --s-blend: multiply;
+  background: radial-gradient(110% 90% at 88% -10%, #E3ECF7 0%, #F8FAFC 58%);
+}
+html[data-theme="light"] .frame { --frame-bg: #F8FAFC; }
+html[data-theme="light"] .canvas .cv-cards div, html[data-theme="light"] .canvas .cv-cmp > div,
+html[data-theme="light"] .canvas .situ, html[data-theme="light"] .canvas .opt-b { box-shadow: 0 1px 2px rgba(18, 33, 59, .06), 0 4px 14px rgba(18, 33, 59, .05); }
+html[data-theme="light"] .canvas .fb { background: rgba(27, 122, 75, .08); border-color: rgba(27, 122, 75, .35); }
+html[data-theme="light"] .canvas .fb.no { background: rgba(142, 101, 18, .08); border-color: rgba(142, 101, 18, .35); }
+html[data-theme="light"] .canvas svg .vn { fill-opacity: .14; }
+html[data-theme="light"] .canvas svg .dn { paint-order: stroke; stroke: var(--s-bg); stroke-width: 6px; stroke-linejoin: round; }
+html[data-theme="light"] .canvas svg .q4 { fill: var(--s-dim); stroke: var(--s-line); fill-opacity: .05; }
+html[data-theme="light"] .canvas .opt-b.right { box-shadow: none; }
+@keyframes k-ok-light { 40% { box-shadow: 0 0 0 6px rgba(27, 122, 75, .18); } }
+html[data-theme="light"] .canvas .opt-b.right { animation-name: k-ok-light; }
+
+/* Full screen and projector in light mode: light letterbox bands and controls. */
+html[data-theme="light"] .lesson.pres, html[data-theme="light"] .lesson.pres .stage-wrap { background: #DCE3EB; }
+html[data-theme="light"] .lesson.pres .frame { box-shadow: 0 6px 30px rgba(18, 33, 59, .14); }
+html[data-theme="light"] .lesson.pres .deck-bar .btn:not(.primary) { background: var(--paper); color: var(--ink); border-color: transparent; box-shadow: var(--raise-sm); }
+html[data-theme="light"] .lesson.pres .deck-bar .btn.on { color: var(--brass); box-shadow: var(--press-sm); }
+html[data-theme="light"] .lesson.pres .deck-bar .prog { background: var(--paper); border-color: transparent; box-shadow: var(--press-sm); }
+html[data-theme="light"] .lesson.pres .score { background: var(--brass-soft); color: var(--ink); border-color: transparent; }
+html[data-theme="light"] .pres-notes { background: #FFFFFF; color: var(--ink); border-color: var(--line); }
+html[data-theme="light"] .pres-notes b { color: var(--brass); }
+html[data-theme="light"] body.projector { background: #DCE3EB; }
