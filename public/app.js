@@ -1,5 +1,7 @@
 import { lessons, totalMinutes } from './lessons.js';
 import { decks, reference } from './decks.js';
+import { DIAGRAMS, flowHTML, applyReveal } from './diagrams.js';
+import { icon } from './icons.js';
 
 // ---------- constants ----------
 const CACHE_KEY = 'leadership-lab-v2';
@@ -11,7 +13,7 @@ const PHASES = [
   { key: 'APPLY', name: 'Apply', c: 'var(--p5)', blurb: 'Turn the course into one specific action you will take at work.' },
 ];
 const TABS = [['plan', 'Facilitator plan'], ['class', 'Class'], ['quiz', 'Quiz'], ['notes', 'Notes']];
-const PAGES = ['home', 'sessions', 'plan', 'reference', 'help', 'account', 'team'];
+const PAGES = ['home', 'live', 'sessions', 'plan', 'reference', 'help', 'account', 'team'];
 const LETTERS = 'ABCDEF';
 
 const $ = s => document.querySelector(s);
@@ -82,10 +84,10 @@ document.addEventListener('click', e => { if (e.target.closest('[data-theme-togg
 
 // ---------- shell ----------
 function shell() {
-  const items = [['home', 'Home'], ['sessions', 'Sessions', lessons.length], ['plan', 'Course plan'], ['reference', 'Reference'], ['help', 'Help'], ['account', 'Account']];
+  const items = [['home', 'Home'], ['live', 'Live poll'], ['sessions', 'Sessions', lessons.length], ['plan', 'Course plan'], ['reference', 'Reference'], ['help', 'Help'], ['account', 'Account']];
   if (me?.admin) items.push(['team', 'Participants']);
   $('#nav').innerHTML = items.map(([id, label, n]) => `<button class="${page === id ? 'on' : ''}" data-go="${id}" ${page === id ? 'aria-current="page"' : ''}>${label}${n ? `<span class="count">${n}</span>` : ''}</button>`).join('');
-  $('#tabs').innerHTML = [['home', 'Home'], ['sessions', 'Sessions'], ['plan', 'Plan'], ['account', 'Account']]
+  $('#tabs').innerHTML = [['home', 'Home'], ['live', 'Live'], ['sessions', 'Sessions'], ['plan', 'Plan'], ['account', 'Account']]
     .map(([id, label]) => `<button class="${page === id ? 'on' : ''}" data-go="${id}">${label}</button>`).join('');
   const nx = nextLesson();
   $('#railFoot').innerHTML = `<div class="role">Working on</div><div>${doneCount() === lessons.length ? 'All sessions complete' : `Session ${nx.n} · ${esc(phaseOf(nx).name)}`}</div>
@@ -98,6 +100,8 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-go]'
 
 function route() {
   const h = decodeURIComponent(location.hash.slice(1));
+  // A projector window that is pointed at another session (or anywhere else) starts afresh.
+  if (P || /^proj\//.test(h)) { location.reload(); return; }
   const pr = h.match(/^print\/([a-z_]+)(?:\/([a-z]+))?/);
   if (pr && decks[pr[1]]) { startPrint(pr[1], pr[2]); return; }
   if (document.body.classList.contains('printing')) { location.reload(); return; }
@@ -126,15 +130,17 @@ function route() {
 
 function renderPage() {
   shell();
+  liveBanner();
   const v = $('#view');
   if (page === 'sessions') v.innerHTML = sessionsHTML();
   else if (page === 'plan') v.innerHTML = planHTML();
+  else if (page === 'live') { v.innerHTML = liveHTML(); bindLive(); }
   else if (page === 'reference') v.innerHTML = referenceHTML();
   else if (page === 'help') v.innerHTML = helpHTML();
   else if (page === 'account') { v.innerHTML = accountHTML(); bindAccount(); }
   else if (page === 'team') { v.innerHTML = `<div class="page-head"><div class="eyebrow">Facilitator</div><h1>Participants</h1><p>Loading…</p></div>`; loadTeam(); }
   else { v.innerHTML = homeHTML(); bindHome(); }
-  document.title = ({ sessions: 'Sessions · ', plan: 'Course plan · ', reference: 'Reference · ', help: 'Help · ', account: 'Account · ', team: 'Participants · ' }[page] || '') + 'Leadership Lab';
+  document.title = ({ live: 'Live poll · ', sessions: 'Sessions · ', plan: 'Course plan · ', reference: 'Reference · ', help: 'Help · ', account: 'Account · ', team: 'Participants · ' }[page] || '') + 'Leadership Lab';
 }
 
 // ---------- cards ----------
@@ -247,16 +253,59 @@ function helpHTML() {
       <li>Close with the reflection slide. Participants write their action in <b>Notes</b> and mark the session complete.</li></ol></section>
     <section class="panel"><h3>Keyboard shortcuts</h3><div class="steps">
       <div class="step"><kbd>→</kbd><span>Next slide</span></div><div class="step"><kbd>←</kbd><span>Previous slide</span></div>
-      <div class="step"><kbd>F</kbd><span>Full screen on or off</span></div><div class="step"><kbd>P</kbd><span>Presenter view: notes, timer, next slide</span></div><div class="step"><kbd>N</kbd><span>Show or hide the facilitator note while presenting</span></div>
+      <div class="step"><kbd>F</kbd><span>Full screen on or off</span></div><div class="step"><kbd>P</kbd><span>Presenter view: notes, timer, next slide</span></div><div class="step"><kbd>N</kbd><span>Show or hide the facilitator note while presenting</span></div><div class="step"><kbd>T</kbd><span>Start or pause the activity timer; <kbd>R</kbd> resets it, <kbd>+</kbd> adds a minute</span></div><div class="step"><kbd>V</kbd><span>Show or hide live poll results; <kbd>L</kbd> locks or unlocks voting</span></div>
       <div class="step"><kbd>Esc</kbd><span>Leave full screen, then close the session</span></div></div></section>
     <section class="panel"><h3>Accounts and privacy</h3>
       <p>Every participant signs in with their own login. Quiz answers, notes and completed sessions save to that account and follow them to another device.</p>
       <p>Facilitators see who has completed which session and how many notes each person wrote, but never what the notes say.</p>
       <p>Forgot a password? A facilitator can set a new one under <b>Participants</b>.</p></section>
+    <section class="panel"><h3>Live polls</h3>
+      <p>When a facilitator presents a quick check or an opening question (in presenter view or full screen), it opens as a live poll. Participants answer on their phones under <b>Live poll</b>; each person counts once and can change their answer until voting is locked.</p>
+      <p>The slide shows how many have answered. The facilitator chooses when to show the results and when to lock voting. Moving to another slide closes the poll.</p></section>
     <section class="panel"><h3>Install and offline use</h3>
       <p>Use your browser’s “Install” or “Add to Home Screen” option to keep the guide one tap away. After one visit, the pages work without a connection; anything you change saves to your account when you’re back online.</p></section>
   </div>`;
 }
+
+// ---------- live poll (participants) ----------
+// The voting card for phones. It checks every two seconds for the poll the facilitator has open.
+let liveLoop = null, liveData = null;
+function liveHTML() {
+  return `<div class="page-head"><div class="eyebrow">Live poll</div><h1>Vote</h1><p>When your facilitator shows a question to the room, it appears here. Your answer is counted once; you can change it until voting closes.</p></div>
+  <section class="panel live-card" id="liveCard" aria-live="polite"><p class="muted">Connecting…</p></section>`;
+}
+function renderLiveCard() {
+  const box = $('#liveCard'); if (!box) return;
+  const a = liveData?.active;
+  if (!a) { box.innerHTML = `<div class="live-wait">${icon('radio', 'ic')}<div><b>No question is open right now.</b><p class="muted small">Keep this page open. The next question appears here automatically.</p></div></div>`; return; }
+  const mine = liveData.myVote, res = liveData.results, total = res?.total || 0;
+  box.innerHTML = `<div class="eyebrow">${a.locked ? 'Voting closed' : 'Open now'}</div><h2 class="live-q">${esc(a.q)}</h2>
+    <div class="live-opts" role="group" aria-label="Answers">${a.o.map((o, j) => {
+      const c = res?.counts?.[j] || 0, pct = total ? Math.round(c / total * 100) : 0;
+      return `<button class="live-opt${mine === j ? ' on' : ''}" data-vote="${j}" ${a.locked ? 'disabled' : ''} aria-pressed="${mine === j}">
+        ${res ? `<i style="width:${pct}%"></i>` : ''}<b>${LETTERS[j]}</b> <span>${esc(o)}</span>${res ? ` <em>${c}</em>` : ''}${mine === j ? ' <small>Your answer</small>' : ''}</button>`;
+    }).join('')}</div>
+    <p class="small muted">${mine === null || mine === undefined ? (a.locked ? 'You did not vote on this one.' : 'Tap an answer to vote.') : a.locked ? 'Your vote is in. Voting has closed.' : 'Your vote is in. Tap another answer to change it.'}${res ? ` · ${total} response${total === 1 ? '' : 's'}` : ''}</p>`;
+  box.querySelectorAll('[data-vote]').forEach(b => b.onclick = async () => {
+    try { const r = await call('/api/poll/vote', { id: a.id, choice: +b.dataset.vote }); liveData.myVote = r.myVote; renderLiveCard(); }
+    catch (e) { toast(e.message); checkLive(); }
+  });
+}
+async function checkLive() {
+  try { liveData = await call('/api/poll/current'); } catch { return; }
+  if (page === 'live' && !L) renderLiveCard();
+  liveBanner();
+}
+function bindLive() { clearInterval(liveLoop); checkLive(); liveLoop = setInterval(() => { if (page === 'live' && !L) checkLive(); else clearInterval(liveLoop); }, 2000); }
+// Elsewhere in the app, a slim banner points to the open poll.
+function liveBanner() {
+  let b = $('#liveBanner');
+  const show = liveData?.active && page !== 'live' && !L && !P && !document.body.classList.contains('printing');
+  if (!show) { b?.remove(); return; }
+  if (!b) { b = document.createElement('a'); b.id = 'liveBanner'; b.className = 'live-banner'; b.href = '#live'; document.body.append(b); }
+  b.innerHTML = `${icon('radio', 'ic')} <span><b>Live poll open.</b> ${liveData.myVote !== null && liveData.myVote !== undefined ? 'You have voted; tap to see it.' : 'Tap to vote.'}</span>`;
+}
+setInterval(() => { if (me && !P && page !== 'live' && !L) checkLive(); }, 10000);
 
 // ---------- account ----------
 function accountHTML() {
@@ -355,6 +404,7 @@ function timing(l) {
 
 function closeLessonView() {
   const box = $('#lesson'); if (box.hidden) return;
+  stopPolls();
   box.hidden = true; box.className = 'lesson'; box.innerHTML = ''; document.body.style.overflow = ''; L = null;
   if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
 }
@@ -372,6 +422,8 @@ function renderLesson() {
   box.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (!l.mock) location.hash = `s/${l.id}/${b.dataset.tab}`; });
   ({ plan: bindPlan, class: bindClass, quiz: bindQuiz, notes: bindNotes })[L.tab](l);
   fitFrames(box);
+  if (L.tab === 'class') paintTimers();
+  syncPoll(l);
   document.title = `${l.title} · Leadership Lab`;
 }
 
@@ -410,8 +462,9 @@ const lessonOf = id => lessons.find(x => x.id === id) || (id === MOCK_ID ? { ...
 const deckOf = l => decks[l.id];
 const checksIn = l => deckOf(l).filter(s => s.t === 'check').length;
 const scoreOf = (l, picks) => deckOf(l).reduce((n, s, i) => n + (s.t === 'check' && picks[i] === s.a ? 1 : 0), 0);
-// How many clicks a slide takes to reveal fully (0 = shows at once).
-const stepsOf = s => s.t === 'points' ? s.items.length : s.t === 'scenario' && s.items ? s.items.length : s.t === 'discuss' && s.p ? 1 : 0;
+// How many clicks a slide takes to reveal fully (0 = shows at once). Diagrams and chevrons build part by part.
+const stepsOf = s => s.t === 'points' ? s.items.length : s.t === 'scenario' && s.items ? s.items.length : s.t === 'discuss' && s.p ? 1
+  : s.t === 'diagram' ? DIAGRAMS[s.d].steps(s) : s.t === 'flow' ? s.items.length : 0;
 const ALL = 99;
 // Phase accents, brightened for the navy slide background.
 const PH_NAVY = { SELF: '#6E9FD8', PEOPLE: '#5FB3A9', PERFORMANCE: '#D49A5C', INTEGRATE: '#A68BD3', APPLY: '#6CBF8C' };
@@ -421,75 +474,44 @@ const celebrate = () => { try { return /[?&]confetti=1/.test(location.search) ||
 const thumbLabel = (l, s) => s.t === 'cover' ? 'Title' : s.t === 'check' ? 'Quick check' : s.t === 'section' ? `${s.k}: ${s.h}` : s.h || s.k;
 const sessLabel = l => l.mock ? esc(l.title) : `Session ${l.n} · ${esc(l.title)}`;
 
-// Diagrams for named models. Colours come from CSS (phase accent, brass, sea), so they follow the deck palette.
-const DIAGRAMS = {
-  adair: s => {
-    const [a, b, c] = s.circles;
-    return `<svg viewBox="0 0 640 540" role="img" aria-label="Three overlapping circles: ${esc(a[0])}, ${esc(b[0])} and ${esc(c[0])}, with the leader where all three meet">
-      <circle cx="320" cy="185" r="165" class="vn v1"/><circle cx="222" cy="355" r="165" class="vn v2"/><circle cx="418" cy="355" r="165" class="vn v3"/>
-      <text x="320" y="100" class="dt">${esc(a[0])}</text><text x="320" y="130" class="ds">${esc(a[1])}</text>
-      <text x="175" y="405" class="dt">${esc(b[0])}</text><text x="175" y="435" class="ds">${esc(b[1])}</text>
-      <text x="465" y="405" class="dt">${esc(c[0])}</text><text x="465" y="435" class="ds">${esc(c[1])}</text>
-      <circle cx="320" cy="300" r="40" class="core"/><text x="320" y="307" class="dc">Leader</text></svg>`;
-  },
-  tuckman: s => {
-    const xs = [170, 400, 640, 880], ys = [245, 330, 200, 95];
-    return `<svg viewBox="0 0 1040 470" role="img" aria-label="Team performance over time: it dips at storming, then rises through norming to performing">
-      <line x1="70" y1="380" x2="1010" y2="380" class="ax"/><line x1="70" y1="380" x2="70" y2="30" class="ax"/>
-      <text x="1010" y="368" class="axl" text-anchor="end">Time</text><text x="0" y="0" class="axl" transform="translate(52 40) rotate(-90)" text-anchor="end">Performance</text>
-      ${xs.map((x, j) => `<line x1="${x}" y1="${ys[j] + 14}" x2="${x}" y2="380" class="guide"/>`).join('')}
-      <path d="M80,240 C120,240 140,245 170,245 C270,245 310,335 400,330 C490,325 540,220 640,200 C740,180 810,100 880,95 C930,92 970,90 1000,90" class="curve"/>
-      ${s.stages.map(([n, a], j) => `<circle cx="${xs[j]}" cy="${ys[j]}" r="12" class="pt"/><text x="${xs[j]}" y="418" class="dt sm">${esc(n)}</text><text x="${xs[j]}" y="448" class="ds">${esc(a)}</text>`).join('')}</svg>`;
-  },
-  // Five tiers, top to bottom; names and descriptions sit to the right of each tier.
-  maslow: s => {
-    const top = 14, base = 466, apex = 270, half = 255, h = (base - top) / s.tiers.length;
-    const xAt = y => half * (y - top) / (base - top);
-    return `<svg viewBox="0 0 1060 480" role="img" aria-label="A pyramid of five needs, from ${esc(s.tiers.at(-1)[0])} at the base to ${esc(s.tiers[0][0])} at the top">
-      ${s.tiers.map(([n, d], j) => {
-        const y0 = top + j * h + (j ? 4 : 0), y1 = top + (j + 1) * h - 4, mid = (y0 + y1) / 2 + (j ? 0 : 12);
-        const pts = j ? `${apex - xAt(y0)},${y0} ${apex + xAt(y0)},${y0} ${apex + xAt(y1)},${y1} ${apex - xAt(y1)},${y1}` : `${apex},${y0} ${apex + xAt(y1)},${y1} ${apex - xAt(y1)},${y1}`;
-        return `<polygon points="${pts}" class="tier" style="fill-opacity:${(.22 + .14 * j).toFixed(2)}"/>
-          <text x="${apex}" y="${mid + 10}" class="dn">${s.tiers.length - j}</text>
-          <line x1="${apex + xAt(mid) + 14}" y1="${mid}" x2="586" y2="${mid}" class="guide"/>
-          <text x="604" y="${mid - 4}" class="dt sm left">${esc(n)}</text><text x="604" y="${mid + 24}" class="ds left">${esc(d)}</text>`;
-      }).join('')}</svg>`;
-  },
-  // Urgent / important grid: quadrants in the order do now, schedule, delegate, drop.
-  eisenhower: s => {
-    const box = [[78, 46], [556, 46], [78, 262], [556, 262]], cls = ['q1', 'q2', 'q3', 'q4'];
-    return `<svg viewBox="0 0 1040 480" role="img" aria-label="Two by two grid of urgent and important">
-      <text x="315" y="28" class="axl mid">Urgent</text><text x="793" y="28" class="axl mid">Not urgent</text>
-      <text x="0" y="0" class="axl mid" transform="translate(40 150) rotate(-90)">Important</text><text x="0" y="0" class="axl mid" transform="translate(40 366) rotate(-90)">Not important</text>
-      ${s.quads.map(([t, d], j) => `<rect x="${box[j][0]}" y="${box[j][1]}" width="462" height="204" rx="14" class="quad ${cls[j]}"/>
-        <text x="${box[j][0] + 231}" y="${box[j][1] + 96}" class="dt">${esc(t)}</text><text x="${box[j][0] + 231}" y="${box[j][1] + 132}" class="ds">${esc(d)}</text>`).join('')}</svg>`;
-  },
-  // Four-level gauge, left (least authority) to right (most).
-  dial: s => {
-    const cx = 300, cy = 330, R = 270, r = 150, n = s.levels.length;
-    const pt = (rad, deg) => `${(cx + rad * Math.cos(deg * Math.PI / 180)).toFixed(1)},${(cy - rad * Math.sin(deg * Math.PI / 180)).toFixed(1)}`;
-    return `<svg viewBox="0 0 600 400" role="img" aria-label="A gauge with ${n} levels of decision authority, from least on the left to most on the right">
-      ${s.levels.map((lv, j) => {
-        const a0 = 180 - j * 180 / n - 1.5, a1 = 180 - (j + 1) * 180 / n + 1.5, am = (a0 + a1) / 2;
-        return `<path d="M${pt(R, a0)} A${R} ${R} 0 0 1 ${pt(R, a1)} L${pt(r, a1)} A${r} ${r} 0 0 0 ${pt(r, a0)} Z" class="seg" style="fill-opacity:${(.2 + .22 * j).toFixed(2)}"/>
-          <text x="${pt(210, am).split(',')[0]}" y="${+pt(210, am).split(',')[1] + 14}" class="dn">${esc(lv)}</text>`;
-      }).join('')}
-      <text x="${cx - R}" y="${cy + 44}" class="axl start">Less authority</text><text x="${cx + R}" y="${cy + 44}" class="axl">More authority</text></svg>`;
-  },
-};
-const chevron = (j, last) => `<svg viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><polygon points="${j ? '0,0 ' : '0,0 '}${last ? '372' : '360'},0 400,60 ${last ? '372' : '360'},120 0,120${j ? ' 40,60' : ''}"/></svg>`;
+// Activity and discussion slides carry a countdown. Activities use the planned activity time; discussions use their
+// own "min" or the time named in the prompt ("Two minutes in pairs"), otherwise two minutes.
+const WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, ten: 10 };
+function timerMinutes(l, s) {
+  if (s.t === 'points' && s.k === 'Group practice') return l.mock ? 10 : (timing(l).find(r => r.label.startsWith('Activity'))?.min || 10);
+  if (s.t !== 'discuss') return 0;
+  if (s.min) return s.min;
+  const m = String(s.p || '').toLowerCase().match(/\b(one|two|three|four|five|six|seven|eight|ten|\d+)\s+minutes?\b/);
+  return m ? (WORDS[m[1]] || +m[1]) : 2;
+}
+// Slides that can run a live poll: quick checks, and discussion prompts that list answer options.
+const pollOptions = s => s.t === 'check' ? s.o : s.t === 'discuss' && s.poll ? s.poll : null;
+const pollId = (l, i) => `${l.id}:${i}`;
 
-// One slide. opts: i, picks, step (points revealed), reveal ('hide' for the audience, 'ghost' for the presenter),
-// still (preview: no interaction), fit ('width', 'box', 'page' or a fixed scale).
+// Photo frame: a supplied photo, or a styled placeholder naming the subject and shape still needed.
+function photoFrame(p, variant) {
+  const credit = p.credit ? `<figcaption>${esc(p.credit)}</figcaption>` : '';
+  if (p.src) return `<figure class="ph ${variant}"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy">${credit}</figure>`;
+  return `<figure class="ph ${variant} placeholder" role="img" aria-label="${esc(p.alt)}"><div class="ph-in">${icon('camera', 'ic ph-ic')}<b>Photo to come</b><span>${esc(p.subject)}</span><small>${esc(p.ratio || '3:2 landscape')} · alt: ${esc(p.alt)}</small></div>${credit}</figure>`;
+}
+
+// One slide. opts: i, picks, step (parts revealed), reveal ('hide' for the audience, 'ghost' for the presenter),
+// still (preview or print: no interaction, everything shown), fit ('width', 'box', 'page' or a fixed scale).
 function slideHTML(l, { i, picks = {}, step = ALL, reveal = 'hide', still = false, fit = 'width' }) {
   const d = deckOf(l), s = d[i], phase = PH_NAVY[s.ph || l.phase] ? s.ph || l.phase : 'SELF', ph = PH_NAVY[phase], phl = PH_LIGHT[phase];
+  const mode = still ? 'still' : reveal;
   const vis = j => j < step ? '' : reveal === 'ghost' ? ' ghost' : ' hid';
   const kick = s.k ? `<div class="kick">${esc(s.k)}</div>` : '';
   const lede = s.p ? `<p class="lede">${esc(s.p)}</p>` : '';
-  const bullets = items => `<ul class="bul">${items.map((t, j) => `<li class="${vis(j)}"><b class="n">${pad(j + (s.from || 1))}</b> <span>${esc(t)}</span></li>`).join('')}</ul>`;
+  const marker = j => s.ic?.[j] ? icon(s.ic[j], 'ic n') : `<b class="n">${pad(j + (s.from || 1))}</b>`;
+  const bullets = items => `<ul class="bul${s.ic ? ' iconic' : ''}">${items.map((t, j) => `<li class="${vis(j)}">${marker(j)} <span>${esc(t)}</span></li>`).join('')}</ul>`;
+  const full = s.photo?.variant === 'full';
   let body;
   switch (s.t) {
-    case 'cover': body = `<div class="cv-center"><div class="kick">Phase ${phaseNo(l)} · ${esc(phaseOf(l).name)} · Session ${l.n}</div><h1>${esc(l.title)}</h1><p class="lede">${esc(l.intro)}</p><span class="bar"></span></div>`; break;
+    case 'cover': {
+      const text = `<div class="cv-center"><div class="kick">Phase ${phaseNo(l)} · ${esc(phaseOf(l).name)} · Session ${l.n}</div><h1>${esc(l.title)}</h1><p class="lede">${esc(l.intro.split(/(?<=\.)\s/)[0])}</p><span class="bar"></span></div>`;
+      body = s.photo && !full ? `<div class="split">${text}${photoFrame(s.photo, 'split')}</div>` : text; break;
+    }
     case 'section': {
       const parts = s.parts || d.filter(x => x.t === 'section').map(x => x.h), idx = s.part ? s.part - 1 : Math.max(0, parts.indexOf(s.h));
       body = `<div class="sec-grid"><div class="sec-num">${idx + 1}</div><div class="sec-main"><div class="kick">Part ${idx + 1} of ${parts.length}</div><h2>${esc(s.h)}</h2>${lede}
@@ -498,26 +520,33 @@ function slideHTML(l, { i, picks = {}, step = ALL, reveal = 'hide', still = fals
     case 'statement': body = `${kick}<div class="cv-center"><h2 class="big">${esc(s.h)}</h2>${lede}</div>`; break;
     case 'points': body = `${kick}<h2>${esc(s.h)}</h2>${bullets(s.items)}`; break;
     case 'cards': { const n = s.items.length, cols = n <= 3 ? n : n === 4 ? 2 : 3;
-      body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-cards" style="--cols:${cols}">${s.items.map(([h, p]) => `<div><b>${esc(h)}</b> <span>${esc(p)}</span></div>`).join('')}</div>`; break; }
-    case 'flow': body = `${kick}<h2>${esc(s.h)}</h2><div class="chev" style="--n:${s.items.length}">${s.items.map(([h, p], j) => `<div class="ch"><div class="ch-shape${j ? '' : ' first'}">${chevron(j, j === s.items.length - 1)}<b>Step ${j + 1}</b> <span>${esc(h)}</span></div> <p>${esc(p)}</p></div>`).join('')}</div>`; break;
+      body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-cards${s.ic ? ' iconic' : ''}" style="--cols:${cols}">${s.items.map(([h, p], j) => `<div>${s.ic?.[j] ? icon(s.ic[j], 'ic card-ic') : ''}<b>${esc(h)}</b> <span>${esc(p)}</span></div>`).join('')}</div>`; break; }
+    case 'flow': body = applyReveal(`${kick}<h2>${esc(s.h)}</h2>${flowHTML(s)}`, step, mode); break;
     case 'compare': body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-cmp">${[s.a, s.b].map(([h, items], j) => `<div class="${j ? 'yes' : 'no'}"><b>${esc(h)}</b> <ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div>`; break;
-    case 'discuss': body = `${kick}<div class="cv-center"><span class="badge">Discuss</span><h2 class="big">${esc(s.h)}</h2>${s.p ? `<p class="lede${vis(0)}">${esc(s.p)}</p>` : ''}</div>`; break;
+    case 'discuss': {
+      const opts = s.poll ? `<div class="pchart" data-pchart>${s.poll.map((o, j) => `<div class="prow"><span class="pl">${esc(o)}</span> <span class="pbar"><i data-vi="${j}"></i></span> <em data-vc="${j}">0</em></div>`).join('')}</div>` : '';
+      body = `${kick}<div class="cv-center"><span class="badge">Discuss</span><h2 class="big">${esc(s.h)}</h2>${s.p ? `<p class="lede${vis(0)}">${esc(s.p)}</p>` : ''}${opts}</div>`; break;
+    }
     case 'scenario': body = `${kick}<h2>${esc(s.h)}</h2><div class="situ">${esc(s.p)}</div>${s.items ? bullets(s.items) : ''}`; break;
-    case 'diagram': body = `${kick}<h2>${esc(s.h)}</h2><div class="dg dg-${s.d}${s.key ? ' with-key' : ''}"><div class="dg-art">${DIAGRAMS[s.d](s)}</div>${s.key ? `<ul class="dg-key">${s.key.map(([h, p]) => `<li><b>${esc(h)}</b> <span>${esc(p)}</span></li>`).join('')}</ul>` : ''}</div>`; break;
+    case 'diagram': body = applyReveal(`${kick}<h2>${esc(s.h)}</h2><div class="dg dg-${s.d}${s.key ? ' with-key' : ''}"><div class="dg-art">${DIAGRAMS[s.d].html(s)}</div>${s.key ? `<ul class="dg-key">${s.key.map(([h, p], j) => `<li data-r="${Math.min(j, DIAGRAMS[s.d].steps(s) - 1)}"><b>${esc(h)}</b> <span>${esc(p)}</span></li>`).join('')}</ul>` : ''}</div>`, step, mode); break;
     case 'check': {
       const pick = picks[i];
       const opts = s.o.map((c, j) => {
         const cls = pick === undefined ? '' : j === s.a ? 'right' : j === pick ? 'wrong' : 'dim';
-        return `<button class="opt-b ${cls}" ${still ? 'tabindex="-1"' : `data-qk="${j}"`} ${pick !== undefined || still ? 'disabled' : ''}><b>${LETTERS[j]}</b> <span>${esc(c)}</span></button>`;
+        return `<button class="opt-b ${cls}" ${still ? 'tabindex="-1"' : `data-qk="${j}"`} ${pick !== undefined || still ? 'disabled' : ''}><i class="vbar" data-vi="${j}"></i><b>${LETTERS[j]}</b> <span>${esc(c)}</span> <em class="vct" data-vc="${j}">0</em></button>`;
       }).join('');
       const fb = pick === undefined ? '' : `<div class="fb ${pick === s.a ? 'ok' : 'no'}" aria-live="polite"><b>${pick === s.a ? 'Strong response' : `The stronger answer is ${LETTERS[s.a]}`}</b> <span>${esc(s.why)}</span></div>`;
       body = `<div class="kick">Quick check</div><h2 class="q">${esc(s.q)}</h2><div class="opts">${opts}</div>${fb}`; break;
     }
     default: body = `<div class="kick">Reflection · ${esc(s.h)}</div><div class="cv-center"><h2 class="big">${esc(s.p)}</h2><p class="lede">Write one specific action: the situation, what you will do and when.</p></div>`;
   }
-  return `<div class="frame" data-fit="${fit}"><div class="canvas t-${s.t}${still ? ' still' : ''}" style="--ph-d:${ph};--ph-l:${phl}" ${still ? 'aria-hidden="true"' : 'id="stage"'}>
-    <div class="cv-body">${body}</div>
-    <footer class="cv-foot"><span class="mark"><i></i>Leadership Lab</span><span class="sess">${sessLabel(l)}</span>${s.src ? `<span class="src">Source: ${esc(s.src)}</span>` : ''}<span class="num">${pad(i + 1)} / ${pad(d.length)}</span></footer></div></div>`;
+  const mins = still ? 0 : timerMinutes(l, s);
+  const timer = mins ? `<div class="tmr" data-tmr data-total="${mins * 60}" role="timer" aria-label="Activity timer"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="50" class="tmr-bg"/><circle cx="60" cy="60" r="50" class="tmr-fg" pathLength="1"/></svg><b class="tmr-t">${pad(mins)}:00</b><small class="tmr-l">timer</small></div>` : '';
+  const live = pollOptions(s) && !still ? `<div class="live" data-live>${icon('smartphone', 'ic')} <span>Vote at <b>${esc(location.host)}/#live</b></span> <em data-lcount>0 responses</em></div>` : '';
+  const bg = full && s.photo ? photoFrame(s.photo, 'full') : '';
+  return `<div class="frame" data-fit="${fit}"><div class="canvas t-${s.t}${still ? ' still' : ''}${mins ? ' has-tmr' : ''}${bg ? ' has-photo' : ''}" style="--ph-d:${ph};--ph-l:${phl}" ${still ? 'aria-hidden="true"' : 'id="stage"'} data-si="${i}">
+    ${bg}<div class="cv-body">${body}</div>${timer}${live}
+    <footer class="cv-foot"><span class="mark"><i></i>Leadership Lab</span><span class="sess">${sessLabel(l)}</span>${s.src ? `<span class="src">Source: ${esc(s.src)}</span>` : ''}${s.photo?.src && s.photo.credit ? `<span class="src">Photo: ${esc(s.photo.credit)}</span>` : ''}<span class="num">${pad(i + 1)} / ${pad(d.length)}</span></footer></div></div>`;
 }
 
 // Scale every canvas to its container. Text that still does not fit shrinks a little (to 66% at most).
@@ -550,8 +579,10 @@ function deckBar(l) {
     ? `<button class="btn ${L.notes ? 'on' : ''}" id="notesS">Notes</button><button class="btn" id="exitS">Exit full screen</button>`
     : L.mode === 'presenter' ? '' : '<button class="btn" id="presS">Present</button><button class="btn" id="pvS">Presenter view</button><button class="btn" id="printS">Print or PDF</button>';
   const more = L.step < stepsOf(s);
+  const timer = timerMinutes(l, s) ? '<span class="tmr-ctl"><button class="btn" id="tmrRun">Start timer</button><button class="btn" id="tmrReset" title="Reset the timer (R)">Reset</button><button class="btn" id="tmrAdd" title="Add a minute (+)">+1 min</button></span>' : '';
+  const poll = L.mode === 'pres' ? pollControlsHTML(l, true) : '';
   return `<div class="deck-bar"><button class="btn" id="prevS" ${L.slide === 0 && L.step === 0 ? 'disabled' : ''}>Previous</button><div class="prog" aria-hidden="true"><i style="width:${(L.slide + 1) / d.length * 100}%"></i></div>
-    ${n ? `<span class="score" title="Quick checks answered correctly">★ ${scoreOf(l, L.picks)} / ${n}</span>` : ''}${tools}
+    ${n ? `<span class="score" title="Quick checks answered correctly">★ ${scoreOf(l, L.picks)} / ${n}</span>` : ''}${timer}${poll}${tools}
     <button class="btn primary" id="nextS">${more ? 'Reveal next' : last ? (L.mode === 'normal' && !l.mock ? 'To the quiz' : 'Finish') : 'Next'}</button></div>`;
 }
 
@@ -588,8 +619,9 @@ function presenterHTML(l) {
     <div class="pv-main">
       <div class="pv-cur stage-host fill">${slideHTML(l, { i: L.slide, picks: L.picks, step: L.step, reveal: 'ghost', fit: 'box' })}</div>
       <div class="pv-side">
-        <section class="panel"><div class="pv-time ${pace.over ? 'over' : ''}"><span>Slide <b>${L.slide + 1}</b> of ${d.length}${steps ? ` · point ${Math.min(L.step, steps)} of ${steps}` : ''}</span><span id="pvPace">${pace.text}</span></div></section>
+        <section class="panel"><div class="pv-time ${pace.over ? 'over' : ''}"><span>Slide <b>${L.slide + 1}</b> of ${d.length}${steps ? ` · step ${Math.min(L.step, steps)} of ${steps}` : ''}</span><span id="pvPace">${pace.text}</span></div></section>
         <section class="panel"><h3>Speaker notes</h3><p class="pv-notes">${esc(s.n)}</p>${answer}</section>
+        ${pollControlsHTML(l, false)}
         <section class="panel"><h3>Next</h3>${next ? `<div class="pv-next">${slideHTML(l, { i: L.slide + 1, picks: L.picks, still: true, fit: 'width' })}</div>` : '<p class="muted">End of the deck.</p>'}</section>
         <p class="pv-help">← → or Space to move; faded points are still hidden on the projector. Esc leaves presenter view.</p>
       </div>
@@ -645,6 +677,10 @@ function bindClass(l) {
   $('#notesS') && ($('#notesS').onclick = () => { L.notes = !L.notes; renderLesson(); });
   if (L.mode === 'pres') $('#stage').onclick = e => { if (!e.target.closest('button')) $('#nextS').click(); };
   $$('[data-qk]').forEach(b => b.onclick = e => { e.stopPropagation(); pickAnswer(l, L.slide, +b.dataset.qk); });
+  $('#tmrRun') && ($('#tmrRun').onclick = e => { e.stopPropagation(); timerAction(l, 'toggle'); });
+  $('#tmrReset') && ($('#tmrReset').onclick = () => timerAction(l, 'reset'));
+  $('#tmrAdd') && ($('#tmrAdd').onclick = () => timerAction(l, 'add'));
+  bindPollControls();
   if (L.mode === 'presenter') {
     $('#pvRun').onclick = () => { if (L.clock.run) { L.clock.acc = elapsed(); L.clock.run = false; } else { L.clock.since = Date.now(); L.clock.run = true; } renderLesson(); };
     $('#pvReset').onclick = () => { L.clock = { acc: 0, since: Date.now(), run: L.clock.run }; renderLesson(); };
@@ -681,6 +717,120 @@ function enterFullscreen(el = document.documentElement) { if (!document.fullscre
 function exitPres() { if (!L) return; L.mode = 'normal'; L.notes = false; if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); renderLesson(); }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && L?.mode === 'pres') { L.mode = 'normal'; L.notes = false; renderLesson(); } });
 
+// ----- activity timers -----
+// One countdown per slide (L.timers[slide] = { total, left, endsAt }), painted four times a second. The projector
+// receives the same state, so both screens count down together.
+const fmtS = ms => { const t = Math.ceil(Math.max(0, ms) / 1000); return `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; };
+const timeLeft = t => t.endsAt ? Math.max(0, t.endsAt - Date.now()) : t.left;
+function slideTimer(l, i = L.slide) {
+  const mins = timerMinutes(l, deckOf(l)[i]); if (!mins) return null;
+  L.timers ||= {};
+  return L.timers[i] ||= { total: mins * 60000, left: mins * 60000, endsAt: null };
+}
+function timerAction(l, action) {
+  const t = slideTimer(l); if (!t) return;
+  if (action === 'toggle') {
+    if (t.endsAt) { t.left = timeLeft(t); t.endsAt = null; }
+    else { if (t.left <= 0) t.left = t.total; t.endsAt = Date.now() + t.left; }
+  } else if (action === 'reset') { t.left = t.total; t.endsAt = null; }
+  else if (action === 'add') { t.total += 60000; if (t.endsAt) t.endsAt += 60000; else t.left += 60000; }
+  paintTimers(); broadcastTimers();
+}
+function paintTimers() {
+  const timers = P ? P.timers : L?.timers;
+  $$('[data-tmr]').forEach(el => {
+    const si = +el.closest('.canvas').dataset.si, t = timers?.[si], total = t ? t.total : +el.dataset.total * 1000;
+    let left = t ? timeLeft(t) : total;
+    if (t && t.endsAt && left === 0 && !P) { t.left = 0; t.endsAt = null; broadcastTimers(); }
+    el.querySelector('.tmr-t').textContent = fmtS(left);
+    el.querySelector('.tmr-fg').style.strokeDashoffset = (1 - left / total).toFixed(4);
+    el.classList.toggle('run', !!t?.endsAt);
+    el.classList.toggle('low', !!t?.endsAt && left <= 60000);
+    el.classList.toggle('done', !!t && left === 0);
+    el.querySelector('.tmr-l').textContent = !t || (!t.endsAt && left === total) ? 'timer' : left === 0 ? 'time' : t.endsAt ? 'left' : 'paused';
+  });
+  const run = $('#tmrRun'), t = L && !P ? L.timers?.[L.slide] : null;
+  if (run) run.textContent = t?.endsAt ? 'Pause timer' : t && timeLeft(t) === 0 ? 'Restart timer' : t && t.left < t.total ? 'Resume timer' : 'Start timer';
+}
+setInterval(paintTimers, 250);
+function broadcastTimers() { if (chan && L && L.mode === 'presenter') chan.postMessage({ type: 'timers', id: L.id, timers: L.timers || {} }); }
+
+// ----- live polls, facilitator side -----
+// In presenter view or full screen, a facilitator's quick-check and opening-question slides open a live poll for
+// signed-in participants; moving to another slide closes it. Results are fetched every 1.5 seconds.
+let pollLoop = null, pollBusy = false;
+const canPoll = () => !!(me?.admin && L && (L.mode === 'presenter' || L.mode === 'pres'));
+async function pollControl(action, poll) {
+  try { return await call('/api/poll/control', { action, poll }); }
+  catch (e) { toast(e.message); return null; }
+}
+function syncPoll(l) {
+  if (!canPoll()) { stopPolls(); return; }
+  const s = deckOf(l)[L.slide], o = pollOptions(s), id = pollId(l, L.slide);
+  if (o) {
+    if (L.pollOpen !== id) {
+      L.pollOpen = id; L.poll = { id, counts: o.map(() => 0), total: 0, locked: false, show: false, open: true };
+      pollControl('open', { id, q: s.pq || s.q || s.h, o }).then(() => refreshPoll());
+    }
+    startPollLoop();
+  } else if (L.pollOpen) { stopPolls(); }
+  applyPoll(document, L.poll); updatePollControls(); broadcastPoll();
+}
+async function refreshPoll() {
+  if (!L?.pollOpen || pollBusy) return;
+  pollBusy = true;
+  try {
+    const r = await call('/api/poll/results?id=' + encodeURIComponent(L.pollOpen));
+    if (L?.pollOpen === r.id) { L.poll = r; applyPoll(document, r); updatePollControls(); broadcastPoll(); }
+  } catch {}
+  pollBusy = false;
+}
+function startPollLoop() { if (!pollLoop) pollLoop = setInterval(refreshPoll, 1500); }
+function stopPolls() {
+  clearInterval(pollLoop); pollLoop = null;
+  if (L?.pollOpen) { pollControl('close'); L.pollOpen = null; L.poll = null; broadcastPoll(); }
+}
+async function pollAction(action) {
+  if (!L?.pollOpen) return;
+  await pollControl(action, { id: L.pollOpen });
+  await refreshPoll();
+}
+function broadcastPoll() { if (chan && L && L.mode === 'presenter') chan.postMessage({ type: 'poll', id: L.id, poll: L.poll || null }); }
+// Show the poll on the canvas: live badge, response count, and bars when results are shown.
+function applyPoll(root, poll) {
+  const deckId = P ? P.id : L?.id;
+  root.querySelectorAll('.canvas:not(.still)').forEach(cv => {
+    if (!cv.querySelector('[data-live]')) return;
+    const on = !!poll && poll.id === `${deckId}:${cv.dataset.si}`;
+    const wasShown = cv.dataset.show === '1';
+    cv.dataset.live = on ? '1' : ''; cv.dataset.show = on && poll.show ? '1' : '';
+    if (wasShown !== (cv.dataset.show === '1')) fitText(cv);
+    if (!on) return;
+    const total = poll.total || 0, max = Math.max(1, total);
+    cv.querySelectorAll('[data-vi]').forEach(b => { b.style.width = `${((poll.counts?.[+b.dataset.vi] || 0) / max * 100).toFixed(1)}%`; });
+    cv.querySelectorAll('[data-vc]').forEach(e => { e.textContent = poll.counts?.[+e.dataset.vc] || 0; });
+    cv.querySelector('[data-lcount]').textContent = `${total} response${total === 1 ? '' : 's'}${poll.locked ? ' · voting closed' : ''}`;
+  });
+}
+function updatePollControls() {
+  const p = L?.poll;
+  const lock = $('#pollLock'), show = $('#pollShow'), count = $('#pollCount');
+  if (lock) lock.textContent = p?.locked ? 'Unlock voting' : 'Lock voting';
+  if (show) show.textContent = p?.show ? 'Hide results' : 'Show results';
+  if (count) count.textContent = p ? `${p.total || 0} response${p.total === 1 ? '' : 's'}${p.locked ? ' · voting locked' : ''}` : 'Opening…';
+}
+function pollControlsHTML(l, compact) {
+  const s = deckOf(l)[L.slide];
+  if (!me?.admin || !pollOptions(s)) return '';
+  const btns = `<button class="btn sm" id="pollShow">Show results</button><button class="btn sm" id="pollLock">Lock voting</button>${compact ? '' : '<button class="btn sm danger" id="pollReset">Reset votes</button>'}`;
+  return compact ? btns : `<section class="panel"><h3>Live poll</h3><p class="small"><b id="pollCount">Opening…</b></p><p class="small muted">Participants vote at <b>${esc(location.host)}/#live</b> while this slide is showing.</p><div class="row">${btns}</div></section>`;
+}
+function bindPollControls() {
+  $('#pollShow') && ($('#pollShow').onclick = () => pollAction(L.poll?.show ? 'hide' : 'show'));
+  $('#pollLock') && ($('#pollLock').onclick = () => pollAction(L.poll?.locked ? 'unlock' : 'lock'));
+  $('#pollReset') && ($('#pollReset').onclick = () => { if (confirm('Clear every vote on this question?')) pollAction('reset'); });
+}
+
 // ----- projector window: only the slide, letterboxed, following the presenter view -----
 let P = null; // { id, slide, step, picks }
 function renderProjector() {
@@ -688,7 +838,7 @@ function renderProjector() {
   document.body.className = 'projector';
   document.body.innerHTML = `<div class="proj stage-host fill">${slideHTML(l, { i: P.slide, picks: P.picks, step: P.step, reveal: 'hide', fit: 'box' })}</div>${P.hint ? '<div class="proj-hint" id="projHint">Click anywhere for full screen · ← → move slides</div>' : ''}`;
   document.title = `${l.title} · Projector`;
-  fitFrames();
+  fitFrames(); paintTimers(); applyPoll(document, P.poll);
   $$('[data-qk]').forEach(b => b.onclick = e => { e.stopPropagation(); chan?.postMessage({ type: 'pick', id: P.id, slide: P.slide, choice: +b.dataset.qk }); });
 }
 function startProjector(id) {
@@ -706,6 +856,8 @@ function startProjector(id) {
       Object.assign(P, { slide: data.slide, step: data.step, picks: data.picks }); renderProjector();
       if (before === undefined && after !== undefined && after === decks[P.id][P.slide].a) confetti($('#stage'));
     }
+    if (data.type === 'timers' && data.id === P.id) { P.timers = data.timers; paintTimers(); }
+    if (data.type === 'poll' && data.id === P.id) { P.poll = data.poll; applyPoll(document, P.poll); }
   };
   chan.postMessage({ type: 'hello', id });
   setInterval(() => chan.postMessage({ type: 'hello', id }), 4000);
@@ -715,7 +867,7 @@ let lastHello = 0;
 if (chan) chan.addEventListener('message', ({ data }) => {
   if (P || !L || L.mode !== 'presenter' || data.id !== L.id) return;
   const l = lessonOf(L.id);
-  if (data.type === 'hello') { lastHello = Date.now(); if (!L.linked) { L.linked = true; renderLesson(); } broadcast(); }
+  if (data.type === 'hello') { lastHello = Date.now(); if (!L.linked) { L.linked = true; renderLesson(); } broadcast(); broadcastTimers(); broadcastPoll(); }
   if (data.type === 'nav') { if (data.dir > 0 ? stepForward(l) : stepBack(l)) { renderLesson(); broadcast(); } }
   if (data.type === 'pick' && data.slide === L.slide) pickAnswer(l, data.slide, data.choice);
 });
@@ -791,6 +943,11 @@ document.addEventListener('keydown', e => {
   else if ((e.key === 'f' || e.key === 'F') && L.mode !== 'presenter') { if (L.mode === 'pres') exitPres(); else { L.mode = 'pres'; renderLesson(); enterFullscreen(); } }
   else if ((e.key === 'p' || e.key === 'P') && L.mode === 'normal') enterPresenter();
   else if ((e.key === 'n' || e.key === 'N') && L.mode === 'pres') { L.notes = !L.notes; renderLesson(); }
+  else if (e.key === 't' || e.key === 'T') timerAction(lessonOf(L.id), 'toggle');
+  else if (e.key === 'r' || e.key === 'R') timerAction(lessonOf(L.id), 'reset');
+  else if (e.key === '+' || e.key === '=') timerAction(lessonOf(L.id), 'add');
+  else if ((e.key === 'v' || e.key === 'V') && L.poll) pollAction(L.poll.show ? 'hide' : 'show');
+  else if ((e.key === 'l' || e.key === 'L') && L.poll) pollAction(L.poll.locked ? 'unlock' : 'lock');
 });
 
 window.addEventListener('hashchange', route);

@@ -5,6 +5,8 @@
   "compatibility_date": "2026-11-01",
   "assets": { "directory": "public", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "single-page-application" },
   "kv_namespaces": [{ "binding": "USERS", "id": "aa77f01558b847edb39d2a1851a71a07" }],
+  "durable_objects": { "bindings": [{ "name": "POLLS", "class_name": "PollRoom" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PollRoom"] }],
   "routes": [{ "pattern": "leadership.mellowpilot.com", "custom_domain": true }],
   "observability": { "enabled": true }
 }

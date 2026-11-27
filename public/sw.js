@@ -1,7 +1,7 @@
 // Offline support: cache the app shell; always go to the network first so content and sign-in stay current.
-const VERSION = '2026-11-28-4';
+const VERSION = '2026-11-28-5';
 const CACHE = 'leadership-lab-' + VERSION;
-const SHELL = ['/', '/css/fonts.css', '/css/app.css', '/app.js', '/lessons.js', '/decks.js', '/assets/icon.svg', '/manifest.webmanifest',
+const SHELL = ['/', '/css/fonts.css', '/css/app.css', '/app.js', '/lessons.js', '/decks.js', '/diagrams.js', '/icons.js', '/assets/icon.svg', '/manifest.webmanifest',
   '/assets/fonts/ibm-plex-sans.woff2', '/assets/fonts/barlow-condensed-600.woff2', '/assets/fonts/barlow-condensed-700.woff2', '/assets/fonts/ibm-plex-mono-500.woff2'];
 
 self.addEventListener('install', e => {

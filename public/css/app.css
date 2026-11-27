@@ -82,7 +82,7 @@ main { margin-left: var(--rail-w); padding-block: 28px 64px; padding-left: max(2
   .topbar b { font-family: var(--f-display); font-size: 1.2rem; letter-spacing: .03em; line-height: 1; display: block; }
   .topbar small { display: block; color: var(--brass); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
   .topbar .theme-btn { margin: 0 0 0 auto; width: auto; }
-  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--rail);
+  .tabs { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--rail);
     padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
   .tabs button { background: none; border: 0; color: var(--rail-ink); font-size: .72rem; font-weight: 600; padding: 8px 2px; border-radius: 6px; letter-spacing: .02em; }
   .tabs button.on { color: #fff; background: rgba(255,255,255,.09); box-shadow: inset 0 -2px 0 var(--brass); }
@@ -535,3 +535,138 @@ html[data-theme="light"] .lesson.pres .score { background: var(--brass-soft); co
 html[data-theme="light"] .pres-notes { background: #FFFFFF; color: var(--ink); border-color: var(--line); }
 html[data-theme="light"] .pres-notes b { color: var(--brass); }
 html[data-theme="light"] body.projector { background: #DCE3EB; }
+
+/* ── Progressive reveal inside diagrams: parts not yet reached are hidden (audience) or faded (presenter). ── */
+.canvas [data-h="hide"] { opacity: 0; }
+.canvas [data-h="ghost"] { opacity: .22; }
+.canvas [data-new] { animation: k-in .45s ease both; }
+.canvas [data-new] .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: k-draw .9s ease forwards; }
+@keyframes k-in { from { opacity: 0; } }
+@keyframes k-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .canvas [data-new], .canvas [data-new] .draw { animation: none; stroke-dashoffset: 0; } }
+
+/* New diagram parts. Every colour is a slide-theme variable, so light and dark both work. */
+.canvas svg .dt.xs { font-size: 23px; letter-spacing: .04em; }
+.canvas svg .ds.sm { font-size: 16px; }
+.canvas svg .dc.lg { font-size: 22px; }
+.canvas svg .dn.sm { font-size: 20px; fill: var(--s-bg); }
+.canvas svg .dl { font-size: 21px; fill: var(--s-dim); }
+.canvas svg .dl.strong { fill: var(--s-ink); font-weight: 600; }
+.canvas svg .end { text-anchor: end; }
+.canvas svg .lbl { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; fill: var(--s-dim); }
+.canvas svg .node { fill: var(--s-panel); stroke: var(--ph); stroke-width: 2.5; }
+.canvas svg .node.hot { stroke: var(--s-brass); stroke-width: 3; }
+.canvas svg .node.c { stroke-width: 3; }
+.canvas svg .ans { fill: var(--s-panel-2); stroke: var(--s-line); stroke-width: 1.5; }
+.canvas svg .arr { stroke: var(--s-dim); stroke-width: 2.5; fill: none; }
+.canvas svg .arr-h { fill: var(--s-dim); }
+.canvas svg .arr.path { stroke: var(--ph); stroke-width: 4; }
+.canvas svg .arr.path-h { fill: var(--ph); }
+.canvas svg .arr.loop { stroke: var(--ph); stroke-width: 3; }
+.canvas svg .arr.grad { stroke: var(--ph); stroke-width: 3; }
+.canvas svg .arr.grad-h { fill: var(--ph); }
+.canvas svg .water { fill: var(--s-sea); fill-opacity: .1; }
+.canvas svg .waterline { stroke: var(--s-sea); stroke-width: 2.5; stroke-dasharray: 10 8; }
+.canvas svg .berg-top { fill: var(--s-panel); stroke: var(--ph); stroke-width: 3; }
+.canvas svg .berg-bottom { fill: var(--ph); fill-opacity: .16; stroke: var(--ph); stroke-width: 2; stroke-dasharray: 6 6; }
+.canvas svg .zone { fill: var(--ph); }
+.canvas svg .panel-bg { fill: var(--s-panel); stroke: var(--s-line); stroke-width: 1.5; }
+.canvas svg .edge { stroke: var(--ph); stroke-width: 2.5; stroke-opacity: .7; }
+.canvas svg .nd { fill: var(--s-bg); stroke: var(--ph); stroke-width: 4; }
+.canvas svg .gap { fill: var(--s-brass); }
+.canvas svg .evt { stroke: var(--s-brass); stroke-width: 3; stroke-dasharray: 6 5; }
+.canvas svg .evt-h { fill: var(--s-brass); }
+.canvas svg .blk { fill: var(--ph); fill-opacity: .2; stroke: var(--ph); stroke-width: 2.5; }
+.canvas svg .blk.soft { fill-opacity: .08; stroke-dasharray: 6 5; }
+.canvas svg .tick { font-family: var(--f-mono); font-size: 15px; fill: var(--s-dim); text-anchor: start; }
+.canvas svg .spoke { stroke: var(--ph); stroke-width: 2; stroke-opacity: .6; }
+.canvas svg .hubc { fill: var(--ph); }
+.canvas .dg-tree .dg-art svg, .canvas .dg-timeline .dg-art svg { max-height: 420px; }
+
+/* Icons: one line style, only on agenda cards, common traps and tomorrow-at-work slides. */
+.canvas .ic { width: 1em; height: 1em; flex: none; }
+.cv-cards.iconic div { gap: 8px; }
+.cv-cards .card-ic { width: calc(34px * var(--s)); height: calc(34px * var(--s)); color: var(--ph); stroke-width: 1.75; }
+.bul.iconic .ic.n { width: calc(34px * var(--s)); height: calc(34px * var(--s)); color: var(--ph); align-self: center; }
+.bul.iconic li { align-items: center; }
+
+/* Activity timer: a ring in the top-right corner of activity and discussion slides. */
+.canvas.has-tmr .cv-body > h2, .canvas.has-tmr .cv-body > .kick { padding-right: 150px; }
+.tmr { position: absolute; top: 40px; right: 64px; width: 124px; height: 124px; display: grid; place-items: center; z-index: 3; }
+.tmr svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.tmr-bg { fill: var(--s-panel); stroke: var(--s-line); stroke-width: 9; }
+.tmr-fg { fill: none; stroke: var(--ph); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset .25s linear, stroke .3s; }
+.tmr-t { position: relative; font-family: var(--f-mono); font-weight: 500; font-size: 27px; letter-spacing: .02em; margin-top: -10px; }
+.tmr-l { position: absolute; bottom: 30px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--s-dim); }
+.tmr.low .tmr-fg { stroke: var(--s-brass); }
+.tmr.done .tmr-fg { stroke: var(--s-ok); }
+.tmr.done .tmr-t { color: var(--s-ok); }
+.tmr.done { animation: k-done 1.2s ease 1; }
+@keyframes k-done { 30% { transform: scale(1.06); } }
+.tmr-ctl { display: inline-flex; gap: 6px; }
+
+/* Live poll on the slide: badge with the response count; bars when results are shown. */
+.live { position: absolute; left: 80px; bottom: 66px; display: none; align-items: center; gap: 10px; font-size: 16px; color: var(--s-dim); background: var(--s-panel); border: 1px solid var(--s-line); border-radius: 999px; padding: 6px 16px; z-index: 3; }
+.live .ic { width: 18px; height: 18px; color: var(--ph); }
+.live b { color: var(--s-ink); font-weight: 600; }
+.live em { font-style: normal; font-family: var(--f-mono); color: var(--ph); }
+.canvas[data-live="1"] .live { display: flex; }
+.canvas[data-live="1"] .cv-body { padding-bottom: 60px; }
+.opt-b { position: relative; overflow: hidden; }
+.opt-b > * { position: relative; }
+.opt-b .vbar { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--ph); opacity: 0; transition: width .6s ease, opacity .3s; }
+.opt-b .vct { margin-left: auto; font-style: normal; font-family: var(--f-mono); font-size: calc(22px * var(--s)); color: var(--s-dim); display: none; }
+.canvas[data-show="1"] .opt-b .vbar { opacity: .18; }
+.canvas[data-show="1"] .opt-b .vct { display: inline; }
+.pchart { display: none; gap: calc(10px * var(--s)); margin-top: 6px; }
+.canvas[data-show="1"] .pchart { display: grid; }
+.canvas[data-show="1"] .t-discuss .lede, .canvas.t-discuss[data-show="1"] .lede { display: none; }
+.prow { display: grid; grid-template-columns: 330px 1fr 56px; align-items: center; gap: 16px; font-size: calc(21px * var(--s)); }
+.prow .pbar { height: 26px; background: var(--s-panel-2); border-radius: 6px; overflow: hidden; }
+.prow .pbar i { display: block; height: 100%; width: 0; background: var(--ph); border-radius: 6px; transition: width .6s ease; }
+.prow em { font-style: normal; font-family: var(--f-mono); color: var(--s-dim); text-align: right; }
+
+/* Photo frames: split (beside the title) or full bleed (behind the slide with a scrim). */
+.split { flex: 1; display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; min-height: 0; }
+.ph { position: relative; margin: 0; border-radius: 14px; overflow: hidden; background: var(--s-panel-2); }
+.ph.split { aspect-ratio: 3 / 2; width: 100%; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph figcaption { position: absolute; right: 10px; bottom: 8px; font-size: 12px; color: #fff; background: rgba(0, 0, 0, .45); padding: 2px 8px; border-radius: 4px; }
+.ph.placeholder { border: 2px dashed var(--s-line); background: repeating-linear-gradient(135deg, var(--s-panel) 0 14px, var(--s-panel-2) 14px 28px); }
+.ph-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 24px; }
+.ph-in .ph-ic { width: 44px; height: 44px; color: var(--ph); }
+.ph-in b { font-family: var(--f-display); font-size: 24px; letter-spacing: .06em; text-transform: uppercase; }
+.ph-in span { font-size: 19px; color: var(--s-ink); max-width: 30ch; }
+.ph-in small { font-size: 13px; color: var(--s-dim); max-width: 40ch; }
+.canvas.has-photo > .ph.full { position: absolute; inset: 0; border-radius: 0; z-index: 0; }
+.canvas.has-photo > .ph.full::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--s-bg) 0%, var(--s-bg) 42%, transparent 100%); opacity: .94; }
+.canvas.has-photo > .ph.full.placeholder .ph-in { left: 52%; }
+.canvas.has-photo .cv-body, .canvas.has-photo .cv-foot { position: relative; z-index: 1; }
+.canvas.has-photo .cv-body > * { max-width: 620px; }
+
+/* Participant voting page and banner. */
+.live-card { gap: 14px; }
+.live-wait { display: flex; gap: 14px; align-items: center; }
+.live-wait .ic { width: 34px; height: 34px; color: var(--brass); flex: none; }
+.live-q { font-family: var(--f-display); font-size: 1.6rem; line-height: 1.15; }
+.live-opts { display: grid; gap: 10px; }
+.live-opt { position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; min-height: 56px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; font-size: 1rem; color: var(--ink); }
+.live-opt > * { position: relative; }
+.live-opt i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--brass-soft); }
+.live-opt b { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--sunk); font-family: var(--f-mono); font-weight: 500; }
+.live-opt em { margin-left: auto; font-style: normal; font-family: var(--f-mono); color: var(--ink-2); }
+.live-opt small { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--brass); }
+.live-opt.on { border-color: var(--brass); box-shadow: 0 0 0 2px var(--brass) inset; }
+.live-opt[disabled] { cursor: default; opacity: .85; }
+html.neu .live-opt { border-color: transparent; box-shadow: var(--raise-sm); }
+html.neu .live-opt.on { box-shadow: var(--press-sm), 0 0 0 2px var(--brass) inset; }
+.live-banner { position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 10px; background: var(--brass); color: var(--brass-ink); padding: 10px 18px; border-radius: 999px; text-decoration: none; font-size: .92rem; box-shadow: 0 6px 20px rgba(0, 0, 0, .2); }
+.live-banner .ic { width: 18px; height: 18px; }
+@media (min-width: 861px) { .live-banner { bottom: 24px; } }
+.ic { width: 1em; height: 1em; vertical-align: -.15em; }
+
+/* Print: everything revealed (the engine already renders the final state); no timers or live badges. */
+@media print { .tmr, .live, .live-banner { display: none !important; } .canvas [data-h] { opacity: 1 !important; } }
+.canvas svg .arr.loop-h { fill: var(--ph); }
+html[data-theme="light"] .canvas svg .dn.sm { stroke: none; }
+.canvas svg polygon.arr { stroke: none; }

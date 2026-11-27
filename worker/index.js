@@ -1,5 +1,6 @@
 // Leadership Lab: sign-in, accounts and progress sync in front of the static app in /public.
-// Accounts, sessions and progress live in the USERS KV namespace.
+// Accounts, sessions and progress live in the USERS KV namespace; live polls live in the PollRoom Durable Object.
+import { DurableObject } from 'cloudflare:workers';
 
 const COOKIE = 'll_session';
 const SESSION_DAYS = 30;
@@ -181,6 +182,8 @@ async function api(request, env, user, path) {
     return json({ ok: true, progress });
   }
 
+  if (path.startsWith('/api/poll/')) return pollApi(request, env, user, path, body);
+
   if (!path.startsWith('/api/users') && path !== '/api/team') return json({ error: 'Not found' }, 404);
   if (!user.admin) return json({ error: 'Only a facilitator can manage accounts.' }, 403);
 
@@ -223,6 +226,79 @@ async function api(request, env, user, path) {
   }
 
   return json({ error: 'Not found' }, 404);
+}
+
+// ---------- live polls ----------
+// One Durable Object holds the poll room for the course: the open poll and one vote per signed-in person.
+// Durable Objects are strongly consistent, so simultaneous votes are never lost (KV could not guarantee that).
+async function pollApi(request, env, user, path, body) {
+  if (!env.POLLS) return json({ error: 'Live polls are not set up on this server.' }, 501);
+  const room = env.POLLS.get(env.POLLS.idFromName('course'));
+  const ask = async (op, data) => { const r = await room.fetch('https://poll-room/' + op, { method: 'POST', body: JSON.stringify(data) }); return json(await r.json(), r.status); };
+  const url = new URL(request.url);
+  if (path === '/api/poll/current' && request.method === 'GET') return ask('current', { user: user.id });
+  if (path === '/api/poll/vote' && request.method === 'POST') return ask('vote', { user: user.id, id: String(body.id || ''), choice: body.choice });
+  if (path === '/api/poll/results' && request.method === 'GET') return ask('results', { id: url.searchParams.get('id') || '', admin: !!user.admin });
+  if (path === '/api/poll/control' && request.method === 'POST') {
+    if (!user.admin) return json({ error: 'Only a facilitator can run a live poll.' }, 403);
+    return ask('control', { action: String(body.action || ''), poll: body.poll || null });
+  }
+  return json({ error: 'Not found' }, 404);
+}
+
+export class PollRoom extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.s = { active: null, polls: {}, votes: {} };
+    ctx.blockConcurrencyWhile(async () => { this.s = (await ctx.storage.get('s')) || this.s; });
+  }
+  tally(id) {
+    const poll = this.s.polls[id], votes = Object.values(this.s.votes[id] || {});
+    const counts = (poll?.o || []).map((_, j) => votes.filter(v => v === j).length);
+    return { id, counts, total: votes.length };
+  }
+  async fetch(request) {
+    const op = new URL(request.url).pathname.slice(1), d = await request.json().catch(() => ({})), s = this.s, a = s.active;
+    const reply = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
+    const save = () => this.ctx.storage.put('s', s);
+    if (op === 'current') {
+      if (!a) return reply({ active: null });
+      return reply({ active: { id: a.id, q: a.q, o: a.o, locked: a.locked, show: a.show }, myVote: s.votes[a.id]?.[d.user] ?? null, results: a.show ? this.tally(a.id) : null });
+    }
+    if (op === 'vote') {
+      if (!a || a.id !== d.id) return reply({ error: 'This poll has closed.' }, 409);
+      if (a.locked) return reply({ error: 'Voting is closed for this question.' }, 423);
+      if (!Number.isInteger(d.choice) || d.choice < 0 || d.choice >= a.o.length) return reply({ error: 'Choose one of the options.' }, 400);
+      (s.votes[a.id] ||= {})[d.user] = d.choice;
+      await save();
+      return reply({ ok: true, myVote: d.choice });
+    }
+    if (op === 'results') {
+      if (!s.polls[d.id]) return reply({ id: d.id, counts: [], total: 0, open: false });
+      const open = a?.id === d.id;
+      if (!d.admin && !(open && a.show)) return reply({ error: 'Results are not being shown.' }, 403);
+      return reply({ ...this.tally(d.id), open, locked: open ? a.locked : true, show: open ? a.show : false });
+    }
+    if (op === 'control') {
+      const { action, poll } = d;
+      if (action === 'open') {
+        const ok = poll && typeof poll.id === 'string' && poll.id.length <= 80 && typeof poll.q === 'string' && Array.isArray(poll.o)
+          && poll.o.length >= 2 && poll.o.length <= 8 && poll.o.every(x => typeof x === 'string' && x.length <= 160);
+        if (!ok) return reply({ error: 'That poll is not valid.' }, 400);
+        s.polls[poll.id] = { q: poll.q.slice(0, 300), o: poll.o };
+        if (a?.id !== poll.id) s.active = { id: poll.id, q: s.polls[poll.id].q, o: poll.o, locked: false, show: false };
+      } else if (action === 'close') s.active = null;
+      else if (['lock', 'unlock', 'show', 'hide'].includes(action)) {
+        if (!a) return reply({ error: 'No poll is open.' }, 409);
+        if (action === 'lock' || action === 'unlock') a.locked = action === 'lock'; else a.show = action === 'show';
+      } else if (action === 'reset') {
+        const id = poll?.id || a?.id; if (id) delete s.votes[id];
+      } else return reply({ error: 'Unknown action.' }, 400);
+      await save();
+      return reply({ active: s.active, results: s.active ? this.tally(s.active.id) : null });
+    }
+    return reply({ error: 'Not found' }, 404);
+  }
 }
 
 export default {
