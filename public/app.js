@@ -437,7 +437,43 @@ const DIAGRAMS = {
       <path d="M80,240 C120,240 140,245 170,245 C270,245 310,335 400,330 C490,325 540,220 640,200 C740,180 810,100 880,95 C930,92 970,90 1000,90" class="curve"/>
       ${s.stages.map(([n, a], j) => `<circle cx="${xs[j]}" cy="${ys[j]}" r="12" class="pt"/><text x="${xs[j]}" y="418" class="dt sm">${esc(n)}</text><text x="${xs[j]}" y="448" class="ds">${esc(a)}</text>`).join('')}</svg>`;
   },
+  // Five tiers, top to bottom; names and descriptions sit to the right of each tier.
+  maslow: s => {
+    const top = 14, base = 466, apex = 270, half = 255, h = (base - top) / s.tiers.length;
+    const xAt = y => half * (y - top) / (base - top);
+    return `<svg viewBox="0 0 1060 480" role="img" aria-label="A pyramid of five needs, from ${esc(s.tiers.at(-1)[0])} at the base to ${esc(s.tiers[0][0])} at the top">
+      ${s.tiers.map(([n, d], j) => {
+        const y0 = top + j * h + (j ? 4 : 0), y1 = top + (j + 1) * h - 4, mid = (y0 + y1) / 2 + (j ? 0 : 12);
+        const pts = j ? `${apex - xAt(y0)},${y0} ${apex + xAt(y0)},${y0} ${apex + xAt(y1)},${y1} ${apex - xAt(y1)},${y1}` : `${apex},${y0} ${apex + xAt(y1)},${y1} ${apex - xAt(y1)},${y1}`;
+        return `<polygon points="${pts}" class="tier" style="fill-opacity:${(.22 + .14 * j).toFixed(2)}"/>
+          <text x="${apex}" y="${mid + 10}" class="dn">${s.tiers.length - j}</text>
+          <line x1="${apex + xAt(mid) + 14}" y1="${mid}" x2="586" y2="${mid}" class="guide"/>
+          <text x="604" y="${mid - 4}" class="dt sm left">${esc(n)}</text><text x="604" y="${mid + 24}" class="ds left">${esc(d)}</text>`;
+      }).join('')}</svg>`;
+  },
+  // Urgent / important grid: quadrants in the order do now, schedule, delegate, drop.
+  eisenhower: s => {
+    const box = [[78, 46], [556, 46], [78, 262], [556, 262]], cls = ['q1', 'q2', 'q3', 'q4'];
+    return `<svg viewBox="0 0 1040 480" role="img" aria-label="Two by two grid of urgent and important">
+      <text x="315" y="28" class="axl mid">Urgent</text><text x="793" y="28" class="axl mid">Not urgent</text>
+      <text x="0" y="0" class="axl mid" transform="translate(40 150) rotate(-90)">Important</text><text x="0" y="0" class="axl mid" transform="translate(40 366) rotate(-90)">Not important</text>
+      ${s.quads.map(([t, d], j) => `<rect x="${box[j][0]}" y="${box[j][1]}" width="462" height="204" rx="14" class="quad ${cls[j]}"/>
+        <text x="${box[j][0] + 231}" y="${box[j][1] + 96}" class="dt">${esc(t)}</text><text x="${box[j][0] + 231}" y="${box[j][1] + 132}" class="ds">${esc(d)}</text>`).join('')}</svg>`;
+  },
+  // Four-level gauge, left (least authority) to right (most).
+  dial: s => {
+    const cx = 300, cy = 330, R = 270, r = 150, n = s.levels.length;
+    const pt = (rad, deg) => `${(cx + rad * Math.cos(deg * Math.PI / 180)).toFixed(1)},${(cy - rad * Math.sin(deg * Math.PI / 180)).toFixed(1)}`;
+    return `<svg viewBox="0 0 600 400" role="img" aria-label="A gauge with ${n} levels of decision authority, from least on the left to most on the right">
+      ${s.levels.map((lv, j) => {
+        const a0 = 180 - j * 180 / n - 1.5, a1 = 180 - (j + 1) * 180 / n + 1.5, am = (a0 + a1) / 2;
+        return `<path d="M${pt(R, a0)} A${R} ${R} 0 0 1 ${pt(R, a1)} L${pt(r, a1)} A${r} ${r} 0 0 0 ${pt(r, a0)} Z" class="seg" style="fill-opacity:${(.2 + .22 * j).toFixed(2)}"/>
+          <text x="${pt(210, am).split(',')[0]}" y="${+pt(210, am).split(',')[1] + 14}" class="dn">${esc(lv)}</text>`;
+      }).join('')}
+      <text x="${cx - R}" y="${cy + 44}" class="axl start">Less authority</text><text x="${cx + R}" y="${cy + 44}" class="axl">More authority</text></svg>`;
+  },
 };
+const chevron = (j, last) => `<svg viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><polygon points="${j ? '0,0 ' : '0,0 '}${last ? '372' : '360'},0 400,60 ${last ? '372' : '360'},120 0,120${j ? ' 40,60' : ''}"/></svg>`;
 
 // One slide. opts: i, picks, step (points revealed), reveal ('hide' for the audience, 'ghost' for the presenter),
 // still (preview: no interaction), fit ('width', 'box', 'page' or a fixed scale).
@@ -459,11 +495,11 @@ function slideHTML(l, { i, picks = {}, step = ALL, reveal = 'hide', still = fals
     case 'points': body = `${kick}<h2>${esc(s.h)}</h2>${bullets(s.items)}`; break;
     case 'cards': { const n = s.items.length, cols = n <= 3 ? n : n === 4 ? 2 : 3;
       body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-cards" style="--cols:${cols}">${s.items.map(([h, p]) => `<div><b>${esc(h)}</b> <span>${esc(p)}</span></div>`).join('')}</div>`; break; }
-    case 'flow': body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-flow">${s.items.map(([h, p], j) => `<div><b>Step ${j + 1}</b> <span>${esc(h)}</span> <p>${esc(p)}</p></div>`).join('')}</div>`; break;
+    case 'flow': body = `${kick}<h2>${esc(s.h)}</h2><div class="chev" style="--n:${s.items.length}">${s.items.map(([h, p], j) => `<div class="ch"><div class="ch-shape${j ? '' : ' first'}">${chevron(j, j === s.items.length - 1)}<b>Step ${j + 1}</b> <span>${esc(h)}</span></div> <p>${esc(p)}</p></div>`).join('')}</div>`; break;
     case 'compare': body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-cmp">${[s.a, s.b].map(([h, items], j) => `<div class="${j ? 'yes' : 'no'}"><b>${esc(h)}</b> <ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div>`; break;
     case 'discuss': body = `${kick}<div class="cv-center"><span class="badge">Discuss</span><h2 class="big">${esc(s.h)}</h2>${s.p ? `<p class="lede${vis(0)}">${esc(s.p)}</p>` : ''}</div>`; break;
     case 'scenario': body = `${kick}<h2>${esc(s.h)}</h2><div class="situ">${esc(s.p)}</div>${s.items ? bullets(s.items) : ''}`; break;
-    case 'diagram': body = `${kick}<h2>${esc(s.h)}</h2><div class="dg${s.key ? ' with-key' : ''}"><div class="dg-art">${DIAGRAMS[s.d](s)}</div>${s.key ? `<ul class="dg-key">${s.key.map(([h, p]) => `<li><b>${esc(h)}</b> <span>${esc(p)}</span></li>`).join('')}</ul>` : ''}</div>`; break;
+    case 'diagram': body = `${kick}<h2>${esc(s.h)}</h2><div class="dg dg-${s.d}${s.key ? ' with-key' : ''}"><div class="dg-art">${DIAGRAMS[s.d](s)}</div>${s.key ? `<ul class="dg-key">${s.key.map(([h, p]) => `<li><b>${esc(h)}</b> <span>${esc(p)}</span></li>`).join('')}</ul>` : ''}</div>`; break;
     case 'check': {
       const pick = picks[i];
       const opts = s.o.map((c, j) => {
