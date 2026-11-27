@@ -387,6 +387,24 @@ export const decks = {
     reflect('commitment'),
     { t: 'statement', k: 'Thank you', h: 'Lead with clarity. Build trust. Deliver together.', p: 'Thank you for your time and your honesty today.', n: 'Thank the group. Hand out evaluations if you use them. Close on time.' },
   ],
+  // ───────────── Mock-ups for design review (open #mock). Not part of any session. ─────────────
+  // Each slide is a redesigned version of a real slide; the original wording lives in the speaker notes.
+  _mockup: [
+    { t: 'section', part: 2, parts: ['Three overlapping needs', 'The three functions', 'The leadership check sheet'], k: 'Part 2', h: 'The three functions', p: 'What the leader actually does for task, team and individual.',
+      n: 'Section divider (session 02, slide 11). Transition: “Let’s turn the three circles into actions.” The divider shows where the session is: part 2 of 3, with every part listed.' },
+    { t: 'diagram', d: 'adair', k: 'The three circles', h: 'Three needs every leader serves', src: 'John Adair, Action-Centred Leadership',
+      circles: [['Task', 'Achieve the aim'], ['Team', 'Build and maintain'], ['Individual', 'Needs and growth']],
+      key: [['Task', 'What the team is there to do'], ['Team', 'Cohesion, standards, morale'], ['Individual', 'Each person’s needs and growth']],
+      n: 'Diagram version of session 02, slide 7. Original card text: Task: achieving what the team is there to do. Team: building and keeping a cohesive team with shared standards. Individual: meeting each person’s needs and developing them. Point to the overlaps as you talk: each need affects the other two, and the leader stands where all three meet. “Together we stand, divided we fall” fits the team circle.' },
+    { t: 'points', k: 'Task', h: 'The task function', items: ['Define the task and make a plan', 'Brief the aim, the plan and why', 'Control quality and pace', 'Check the aim was achieved'],
+      n: 'Reduced-copy version of session 02, slide 13, revealed one point per click. The full original list: define the task and make a plan; brief the group and allocate work and resources; control the quality and pace of the work; keep informed of progress in every area; check performance against the plan and adjust it; check that the aim has been achieved. Ask which line leaders most often skip. Usually it is the last one: checking that the aim, not just the activity, was achieved.' },
+    { t: 'diagram', d: 'tuckman', ph: 'PEOPLE', k: 'Team stages', h: 'Four stages most teams go through', src: 'Bruce Tuckman, 1965',
+      stages: [['Forming', 'Give direction'], ['Storming', 'Manage conflict'], ['Norming', 'Step back, support'], ['Performing', 'Delegate, develop']],
+      n: 'Diagram version of session 07, slide 13, in People teal. Original cards: Forming: polite and unsure; the leader gives direction. Storming: disagreement about roles and methods; the leader manages conflict and clarifies. Norming: agreed ways of working; the leader steps back and supports. Performing: high trust, high output; the leader delegates and develops. Storming is normal, not a sign of failure, and teams can slip back a stage when someone joins or the task changes.' },
+    { t: 'check', q: 'A team member keeps making mistakes late in long shifts. Which need do you check first?', o: ['Esteem: give more praise', 'Physical: rest, breaks and workload', 'Self-fulfilment: offer a bigger role'], a: 1,
+      why: 'Mistakes that cluster late in long shifts point to fatigue. Basic physical needs come first.',
+      n: 'Tightened version of session 02, slide 17. The question is now the title instead of “What would you do?”. Let the room answer first. Correct answers get a quiet green highlight; confetti is off unless switched on in presenter view or Account. Ask what else the leader could check before deciding, such as personal circumstances or training.' },
+  ],
 };
 
 // Quick-reference material shown on the Reference page. Each list mirrors the slides in the matching session.

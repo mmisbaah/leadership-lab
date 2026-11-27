@@ -98,10 +98,19 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-go]'
 
 function route() {
   const h = decodeURIComponent(location.hash.slice(1));
+  const pr = h.match(/^print\/([a-z_]+)(?:\/([a-z]+))?/);
+  if (pr && decks[pr[1]]) { startPrint(pr[1], pr[2]); return; }
+  if (document.body.classList.contains('printing')) { location.reload(); return; }
+  if (h === 'mock') {
+    if (!L || L.id !== MOCK_ID) L = { id: MOCK_ID, tab: 'class', slide: 0, step: 0, mode: 'normal', notes: false, picks: {} };
+    if (!$('#view').innerHTML) renderPage();
+    renderLesson();
+    return;
+  }
   const m = h.match(/^s\/([a-z]+)(?:\/([a-z]+))?/);
   if (m && lessons.some(l => l.id === m[1])) {
     const tab = TABS.some(t => t[0] === m[2]) ? m[2] : 'plan';
-    if (!L || L.id !== m[1]) L = { id: m[1], tab, slide: 0, mode: 'normal', notes: false, picks: {} };
+    if (!L || L.id !== m[1]) L = { id: m[1], tab, slide: 0, step: 0, mode: 'normal', notes: false, picks: {} };
     else L.tab = tab;
     if (tab !== 'class') L.mode = 'normal';
     if (!$('#view').innerHTML) renderPage();
@@ -142,7 +151,7 @@ function card(l) {
 document.addEventListener('click', e => {
   const o = e.target.closest('[data-open]'); if (o) { location.hash = 's/' + o.dataset.open; return; }
   const p = e.target.closest('[data-present]');
-  if (p) { L = { id: p.dataset.present, tab: 'class', slide: 0, mode: 'pres', notes: false, picks: {} }; location.hash = `s/${p.dataset.present}/class`; enterFullscreen(); }
+  if (p) { L = { id: p.dataset.present, tab: 'class', slide: 0, step: 0, mode: 'pres', notes: false, picks: {} }; location.hash = `s/${p.dataset.present}/class`; enterFullscreen(); }
 });
 
 // ---------- home ----------
@@ -261,6 +270,8 @@ function accountHTML() {
       <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b> <span>sessions done</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.choice !== undefined).length}</b> <span>quizzes answered</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b> <span>notes written</span></div></div>
       <p class="muted small">Starting over clears your quiz answers, notes and completed sessions.</p>
       <div class="row"><button class="btn danger" id="resetBtn">Start over</button></div><p class="msg" id="resetMsg" role="status"></p>
+      <h3 style="margin-top:8px">Presenting</h3><label class="check"><input type="checkbox" id="confOpt" ${celebrate() ? 'checked' : ''}> Confetti for correct quick-check answers</label>
+      <p class="small muted">Off by default: correct answers get a quiet green highlight. Also switchable in presenter view.</p>
       <h3 style="margin-top:8px">Sign out</h3><div class="row"><button class="btn" id="logoutBtn">Sign out</button><a class="btn" href="/login?switch=1">Switch account</a></div></section>
   </div>`;
 }
@@ -276,6 +287,7 @@ function bindAccount() {
     try { await call('/api/progress', { reset: true }); saved = {}; cache(); renderPage(); toast('Progress cleared'); }
     catch (err) { $('#resetMsg').className = 'msg bad'; $('#resetMsg').textContent = err.message; }
   };
+  $('#confOpt').onchange = e => { try { localStorage.setItem('ll-confetti', e.target.checked ? 'on' : 'off'); } catch {} };
   $('#logoutBtn').onclick = async () => {
     await fetch('/logout', { method: 'POST' });
     try { localStorage.removeItem(CACHE_KEY); } catch {}
@@ -347,19 +359,21 @@ function closeLessonView() {
 function closeLesson() { location.hash = lastPage; }
 
 function renderLesson() {
-  const l = lessons.find(x => x.id === L.id), box = $('#lesson'), ph = phaseOf(l);
+  const l = lessonOf(L.id), box = $('#lesson'), ph = phaseOf(l);
+  if (l.mock) L.tab = 'class';
   box.hidden = false; document.body.style.overflow = 'hidden';
   box.className = 'lesson' + (L.mode === 'pres' ? ' pres' : L.mode === 'presenter' ? ' presenter' : '');
-  box.innerHTML = `<div class="lesson-head"><div class="hrow"><div><div class="k">Phase ${phaseNo(l)} · ${esc(ph.name)} · Session ${l.n} · ${l.minutes} min</div><h2 id="lessonTitle">${esc(l.title)}</h2></div><button class="x" id="closeLesson">Close</button></div>
-    <div class="ltabs" role="tablist">${TABS.map(([id, label]) => `<button role="tab" aria-selected="${L.tab === id}" class="${L.tab === id ? 'on' : ''}" data-tab="${id}">${label}</button>`).join('')}</div></div>
+  box.innerHTML = `<div class="lesson-head"><div class="hrow"><div><div class="k">${l.mock ? 'For review · not yet in the course' : `Phase ${phaseNo(l)} · ${esc(ph.name)} · Session ${l.n} · ${l.minutes} min`}</div><h2 id="lessonTitle">${esc(l.title)}</h2></div><button class="x" id="closeLesson">Close</button></div>
+    <div class="ltabs" role="tablist">${(l.mock ? TABS.filter(t => t[0] === 'class') : TABS).map(([id, label]) => `<button role="tab" aria-selected="${L.tab === id}" class="${L.tab === id ? 'on' : ''}" data-tab="${id}">${label}</button>`).join('')}</div></div>
     <div class="lesson-body">${({ plan: planTab, class: classTab, quiz: quizTab, notes: notesTab })[L.tab](l)}</div>`;
   $('#closeLesson').onclick = closeLesson;
-  box.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { location.hash = `s/${l.id}/${b.dataset.tab}`; });
+  box.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { if (!l.mock) location.hash = `s/${l.id}/${b.dataset.tab}`; });
   ({ plan: bindPlan, class: bindClass, quiz: bindQuiz, notes: bindNotes })[L.tab](l);
+  fitFrames(box);
   document.title = `${l.title} · Leadership Lab`;
 }
 
-function bindPlan(l) { $$('[data-goslide]').forEach(b => b.onclick = () => { L.slide = +b.dataset.goslide; location.hash = `s/${l.id}/class`; }); }
+function bindPlan(l) { $$('[data-goslide]').forEach(b => b.onclick = () => { L.slide = +b.dataset.goslide; L.step = ALL; location.hash = `s/${l.id}/class`; }); }
 
 function pager(l) {
   const i = lessons.indexOf(l), prev = lessons[i - 1], next = lessons[i + 1];
@@ -385,86 +399,159 @@ function planTab(l) {
 }
 
 // ----- class slides -----
-// L.mode: 'normal' (in the Class tab), 'pres' (full screen), 'presenter' (laptop view with notes; a projector window follows).
+// Every slide is laid out on a fixed 1280×720 canvas, then scaled to fit its container and centred (letterboxed),
+// the same approach as the Instructor Guide. Text sizes are real pixels on that canvas, so a slide looks the same on
+// a laptop, a projector or a printed page. L.mode: 'normal' (Class tab), 'pres' (full screen), 'presenter'.
+const CW = 1280, CH = 720;
+const MOCK_ID = '_mockup';
+const lessonOf = id => lessons.find(x => x.id === id) || (id === MOCK_ID ? { ...lessons.find(x => x.id === 'functional'), id: MOCK_ID, title: 'Slide design mock-ups', mock: true } : null);
 const deckOf = l => decks[l.id];
 const checksIn = l => deckOf(l).filter(s => s.t === 'check').length;
 const scoreOf = (l, picks) => deckOf(l).reduce((n, s, i) => n + (s.t === 'check' && picks[i] === s.a ? 1 : 0), 0);
+// How many clicks a slide takes to reveal fully (0 = shows at once).
+const stepsOf = s => s.t === 'points' ? s.items.length : s.t === 'scenario' && s.items ? s.items.length : s.t === 'discuss' && s.p ? 1 : 0;
+const ALL = 99;
+// Phase accents, brightened for the navy slide background.
+const PH_NAVY = { SELF: '#6E9FD8', PEOPLE: '#5FB3A9', PERFORMANCE: '#D49A5C', INTEGRATE: '#A68BD3', APPLY: '#6CBF8C' };
+const celebrate = () => { try { return /[?&]confetti=1/.test(location.search) || localStorage.getItem('ll-confetti') === 'on'; } catch { return false; } };
+const thumbLabel = (l, s) => s.t === 'cover' ? 'Title' : s.t === 'check' ? 'Quick check' : s.t === 'section' ? `${s.k}: ${s.h}` : s.h || s.k;
+const sessLabel = l => l.mock ? esc(l.title) : `Session ${l.n} · ${esc(l.title)}`;
 
-// One slide as HTML. opts: { i, picks, notes (show the facilitator note box), still (no interaction, for previews) }
-function slideHTML(l, { i, picks = {}, notes = false, still = false }) {
-  const d = deckOf(l), s = d[i], num = `<span class="num">${pad(i + 1)} / ${pad(d.length)}</span>`;
+// Diagrams for named models. Colours come from CSS (phase accent, brass, sea), so they follow the deck palette.
+const DIAGRAMS = {
+  adair: s => {
+    const [a, b, c] = s.circles;
+    return `<svg viewBox="0 0 640 540" role="img" aria-label="Three overlapping circles: ${esc(a[0])}, ${esc(b[0])} and ${esc(c[0])}, with the leader where all three meet">
+      <circle cx="320" cy="185" r="165" class="vn v1"/><circle cx="222" cy="355" r="165" class="vn v2"/><circle cx="418" cy="355" r="165" class="vn v3"/>
+      <text x="320" y="100" class="dt">${esc(a[0])}</text><text x="320" y="130" class="ds">${esc(a[1])}</text>
+      <text x="175" y="405" class="dt">${esc(b[0])}</text><text x="175" y="435" class="ds">${esc(b[1])}</text>
+      <text x="465" y="405" class="dt">${esc(c[0])}</text><text x="465" y="435" class="ds">${esc(c[1])}</text>
+      <circle cx="320" cy="300" r="40" class="core"/><text x="320" y="307" class="dc">Leader</text></svg>`;
+  },
+  tuckman: s => {
+    const xs = [170, 400, 640, 880], ys = [245, 330, 200, 95];
+    return `<svg viewBox="0 0 1040 470" role="img" aria-label="Team performance over time: it dips at storming, then rises through norming to performing">
+      <line x1="70" y1="380" x2="1010" y2="380" class="ax"/><line x1="70" y1="380" x2="70" y2="30" class="ax"/>
+      <text x="1010" y="368" class="axl" text-anchor="end">Time</text><text x="0" y="0" class="axl" transform="translate(52 40) rotate(-90)" text-anchor="end">Performance</text>
+      ${xs.map((x, j) => `<line x1="${x}" y1="${ys[j] + 14}" x2="${x}" y2="380" class="guide"/>`).join('')}
+      <path d="M80,240 C120,240 140,245 170,245 C270,245 310,335 400,330 C490,325 540,220 640,200 C740,180 810,100 880,95 C930,92 970,90 1000,90" class="curve"/>
+      ${s.stages.map(([n, a], j) => `<circle cx="${xs[j]}" cy="${ys[j]}" r="12" class="pt"/><text x="${xs[j]}" y="418" class="dt sm">${esc(n)}</text><text x="${xs[j]}" y="448" class="ds">${esc(a)}</text>`).join('')}</svg>`;
+  },
+};
+
+// One slide. opts: i, picks, step (points revealed), reveal ('hide' for the audience, 'ghost' for the presenter),
+// still (preview: no interaction), fit ('width', 'box', 'page' or a fixed scale).
+function slideHTML(l, { i, picks = {}, step = ALL, reveal = 'hide', still = false, fit = 'width' }) {
+  const d = deckOf(l), s = d[i], ph = PH_NAVY[s.ph || l.phase] || PH_NAVY.SELF;
+  const vis = j => j < step ? '' : reveal === 'ghost' ? ' ghost' : ' hid';
   const kick = s.k ? `<div class="kick">${esc(s.k)}</div>` : '';
-  const note = notes && s.n && !(s.t === 'check' && picks[i] !== undefined) ? `<div class="kid"><div class="kid-h">Facilitator note</div>${esc(s.n)}</div>` : '';
-  const wrap = (cls, inner) => `<div class="stage ${cls} ${still ? 'still' : ''}" ${still ? 'aria-hidden="true"' : 'id="stage"'}>${num}${inner}${note}</div>`;
+  const lede = s.p ? `<p class="lede">${esc(s.p)}</p>` : '';
+  const bullets = items => `<ul class="bul">${items.map((t, j) => `<li class="${vis(j)}"><b class="n">${pad(j + (s.from || 1))}</b> <span>${esc(t)}</span></li>`).join('')}</ul>`;
+  let body;
   switch (s.t) {
-    case 'cover': return wrap('cover', `<div class="body"><div class="kick">Phase ${phaseNo(l)} · ${esc(phaseOf(l).name)} · Session ${l.n}</div><h3>${esc(l.title)}</h3><p class="lede">${esc(l.intro)}</p></div><div class="wave"></div>`);
-    case 'section': return wrap('cover section', `<div class="body"><div class="kick">${esc(s.k)}</div><h3>${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div><div class="wave"></div>`);
-    case 'statement': return wrap('statement', `${kick}<div class="body"><h3 class="big">${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div>`);
-    case 'points': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + (s.from || 1))}</span> ${esc(t)}</li>`).join('')}</ul></div>`);
-    case 'cards': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cards">${s.items.map(([h, p]) => `<div><b>${esc(h)}</b> <span>${esc(p)}</span></div>`).join('')}</div></div>`);
-    case 'flow': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-flow">${s.items.map(([h, p], j) => `<div><b>Step ${j + 1}</b> <span>${esc(h)}</span><p>${esc(p)}</p></div>`).join('')}</div></div>`);
-    case 'compare': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cmp">${[s.a, s.b].map(([h, items], j) => `<div class="${j ? 'yes' : 'no'}"><b>${esc(h)}</b> <ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div></div>`);
-    case 'discuss': return wrap('discuss', `${kick}<div class="body"><div class="badge">Discuss</div><h3 class="big">${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div>`);
-    case 'scenario': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="qbox"><p>${esc(s.p)}</p></div>${s.items ? `<ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + 1)}</span> ${esc(t)}</li>`).join('')}</ul>` : ''}</div>`);
+    case 'cover': body = `<div class="cv-center"><div class="kick">Phase ${phaseNo(l)} · ${esc(phaseOf(l).name)} · Session ${l.n}</div><h1>${esc(l.title)}</h1><p class="lede">${esc(l.intro)}</p><span class="bar"></span></div>`; break;
+    case 'section': {
+      const parts = s.parts || d.filter(x => x.t === 'section').map(x => x.h), idx = s.part ? s.part - 1 : Math.max(0, parts.indexOf(s.h));
+      body = `<div class="sec-grid"><div class="sec-num">${idx + 1}</div><div class="sec-main"><div class="kick">Part ${idx + 1} of ${parts.length}</div><h2>${esc(s.h)}</h2>${lede}
+        <ol class="parts">${parts.map((p, j) => `<li class="${j === idx ? 'on' : j < idx ? 'done' : ''}"><b>${j + 1}</b> <span>${esc(p)}</span></li>`).join('')}</ol></div></div>`; break;
+    }
+    case 'statement': body = `${kick}<div class="cv-center"><h2 class="big">${esc(s.h)}</h2>${lede}</div>`; break;
+    case 'points': body = `${kick}<h2>${esc(s.h)}</h2>${bullets(s.items)}`; break;
+    case 'cards': { const n = s.items.length, cols = n <= 3 ? n : n === 4 ? 2 : 3;
+      body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-cards" style="--cols:${cols}">${s.items.map(([h, p]) => `<div><b>${esc(h)}</b> <span>${esc(p)}</span></div>`).join('')}</div>`; break; }
+    case 'flow': body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-flow">${s.items.map(([h, p], j) => `<div><b>Step ${j + 1}</b> <span>${esc(h)}</span> <p>${esc(p)}</p></div>`).join('')}</div>`; break;
+    case 'compare': body = `${kick}<h2>${esc(s.h)}</h2><div class="cv-cmp">${[s.a, s.b].map(([h, items], j) => `<div class="${j ? 'yes' : 'no'}"><b>${esc(h)}</b> <ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div>`; break;
+    case 'discuss': body = `${kick}<div class="cv-center"><span class="badge">Discuss</span><h2 class="big">${esc(s.h)}</h2>${s.p ? `<p class="lede${vis(0)}">${esc(s.p)}</p>` : ''}</div>`; break;
+    case 'scenario': body = `${kick}<h2>${esc(s.h)}</h2><div class="situ">${esc(s.p)}</div>${s.items ? bullets(s.items) : ''}`; break;
+    case 'diagram': body = `${kick}<h2>${esc(s.h)}</h2><div class="dg${s.key ? ' with-key' : ''}"><div class="dg-art">${DIAGRAMS[s.d](s)}</div>${s.key ? `<ul class="dg-key">${s.key.map(([h, p]) => `<li><b>${esc(h)}</b> <span>${esc(p)}</span></li>`).join('')}</ul>` : ''}</div>`; break;
     case 'check': {
       const pick = picks[i];
       const opts = s.o.map((c, j) => {
         const cls = pick === undefined ? '' : j === s.a ? 'right' : j === pick ? 'wrong' : 'dim';
-        return `<button class="qk-b ${cls}" ${still ? 'tabindex="-1"' : `data-qk="${j}"`} ${pick !== undefined || still ? 'disabled' : ''}><span>${LETTERS[j]}</span> ${esc(c)}</button>`;
+        return `<button class="opt-b ${cls}" ${still ? 'tabindex="-1"' : `data-qk="${j}"`} ${pick !== undefined || still ? 'disabled' : ''}><b>${LETTERS[j]}</b> <span>${esc(c)}</span></button>`;
       }).join('');
-      const after = pick === undefined ? '' : `<div class="kid" aria-live="polite"><div class="kid-h">${pick === s.a ? 'Strong response' : `The stronger answer is ${LETTERS[s.a]}`}</div>${esc(s.why)}</div>`;
-      return wrap('', `<h3>What would you do?</h3><div class="body"><div class="qbox"><div class="kick">Quick check</div><p>${esc(s.q)}</p></div><div class="qk">${opts}</div></div>${after}`);
+      const fb = pick === undefined ? '' : `<div class="fb ${pick === s.a ? 'ok' : 'no'}" aria-live="polite"><b>${pick === s.a ? 'Strong response' : `The stronger answer is ${LETTERS[s.a]}`}</b> <span>${esc(s.why)}</span></div>`;
+      body = `<div class="kick">Quick check</div><h2 class="q">${esc(s.q)}</h2><div class="opts">${opts}</div>${fb}`; break;
     }
-    default: return wrap('', `<div class="kick">Reflection</div><h3>${esc(s.h)}</h3><div class="body"><p class="lede prompt">${esc(s.p)}</p><p class="lede">Write one specific action: the situation, what you will do and when.</p></div><div class="wave"></div>`);
+    default: body = `<div class="kick">Reflection · ${esc(s.h)}</div><div class="cv-center"><h2 class="big">${esc(s.p)}</h2><p class="lede">Write one specific action: the situation, what you will do and when.</p></div>`;
   }
+  return `<div class="frame" data-fit="${fit}"><div class="canvas t-${s.t}${still ? ' still' : ''}" style="--ph:${ph}" ${still ? 'aria-hidden="true"' : 'id="stage"'}>
+    <div class="cv-body">${body}</div>
+    <footer class="cv-foot"><span class="mark"><i></i>Leadership Lab</span><span class="sess">${sessLabel(l)}</span>${s.src ? `<span class="src">Source: ${esc(s.src)}</span>` : ''}<span class="num">${pad(i + 1)} / ${pad(d.length)}</span></footer></div></div>`;
 }
 
+// Scale every canvas to its container. Text that still does not fit shrinks a little (to 66% at most).
+let printing = false;
+function fitFrames(root = document) {
+  root.querySelectorAll('.frame').forEach(f => {
+    const cv = f.firstElementChild, host = f.parentElement, mode = f.dataset.fit;
+    const k = mode === 'box' ? Math.min(host.clientWidth / CW, host.clientHeight / CH)
+      : mode === 'width' ? host.clientWidth / CW
+      : mode === 'page' ? (printing ? 1 : Math.min(1, (document.documentElement.clientWidth - 48) / CW)) : +mode;
+    if (!(k > 0)) return;
+    f.style.width = CW * k + 'px'; f.style.height = CH * k + 'px';
+    cv.style.transform = `scale(${k})`;
+    fitText(cv);
+  });
+}
+function fitText(cv) {
+  const body = cv.querySelector('.cv-body'); if (!body) return;
+  let s = 1; cv.style.setProperty('--s', 1);
+  while (body.scrollHeight > body.clientHeight + 1 && s > 0.66) { s = +(s - 0.04).toFixed(2); cv.style.setProperty('--s', s); }
+}
+window.addEventListener('resize', () => fitFrames());
+document.fonts?.ready.then(() => fitFrames());
+window.addEventListener('beforeprint', () => { printing = true; fitFrames(); });
+window.addEventListener('afterprint', () => { printing = false; fitFrames(); });
+
 function deckBar(l) {
-  const d = deckOf(l), last = L.slide === d.length - 1, n = checksIn(l);
+  const d = deckOf(l), s = d[L.slide], last = L.slide === d.length - 1 && L.step >= stepsOf(s), n = checksIn(l);
   const tools = L.mode === 'pres'
     ? `<button class="btn ${L.notes ? 'on' : ''}" id="notesS">Notes</button><button class="btn" id="exitS">Exit full screen</button>`
-    : L.mode === 'presenter' ? '' : '<button class="btn" id="presS">Present</button><button class="btn" id="pvS">Presenter view</button>';
-  return `<div class="deck-bar"><button class="btn" id="prevS" ${L.slide === 0 ? 'disabled' : ''}>Previous</button><div class="prog" aria-hidden="true"><i style="width:${(L.slide + 1) / d.length * 100}%"></i></div>
-    <span class="score" title="Quick checks answered correctly">★ ${scoreOf(l, L.picks)} / ${n}</span>${tools}
-    <button class="btn primary" id="nextS">${last ? (L.mode === 'normal' ? 'To the quiz' : 'Finish') : 'Next'}</button></div>`;
+    : L.mode === 'presenter' ? '' : '<button class="btn" id="presS">Present</button><button class="btn" id="pvS">Presenter view</button><button class="btn" id="printS">Print or PDF</button>';
+  const more = L.step < stepsOf(s);
+  return `<div class="deck-bar"><button class="btn" id="prevS" ${L.slide === 0 && L.step === 0 ? 'disabled' : ''}>Previous</button><div class="prog" aria-hidden="true"><i style="width:${(L.slide + 1) / d.length * 100}%"></i></div>
+    ${n ? `<span class="score" title="Quick checks answered correctly">★ ${scoreOf(l, L.picks)} / ${n}</span>` : ''}${tools}
+    <button class="btn primary" id="nextS">${more ? 'Reveal next' : last ? (L.mode === 'normal' && !l.mock ? 'To the quiz' : 'Finish') : 'Next'}</button></div>`;
 }
 
 function classTab(l) {
   if (L.mode === 'presenter') return presenterHTML(l);
-  const d = deckOf(l);
+  const d = deckOf(l), s = d[L.slide], pres = L.mode === 'pres', steps = stepsOf(s);
   return `<div class="stage-wrap" id="stageWrap">
-    <div class="thumbs" role="tablist" aria-label="Slides">${d.map((s, i) => `<button class="${i === L.slide ? 'on' : ''}" data-slide="${i}" aria-selected="${i === L.slide}"><b>${pad(i + 1)}</b> ${esc(thumbLabel(l, s))}</button>`).join('')}</div>
-    ${slideHTML(l, { i: L.slide, picks: L.picks, notes: L.mode === 'normal' || L.notes })}
+    <div class="thumbs" role="tablist" aria-label="Slides">${d.map((x, i) => `<button class="${i === L.slide ? 'on' : ''}" data-slide="${i}" aria-selected="${i === L.slide}"><b>${pad(i + 1)}</b> ${esc(thumbLabel(l, x))}</button>`).join('')}</div>
+    <div class="stage-host${pres ? ' fill' : ''}">${slideHTML(l, { i: L.slide, picks: L.picks, step: L.step, reveal: pres ? 'hide' : 'ghost', fit: pres ? 'box' : 'width' })}</div>
+    ${pres && L.notes ? `<div class="pres-notes"><b>Facilitator note</b> ${esc(s.n)}</div>` : ''}
     ${deckBar(l)}
-    <p class="small muted hint">← → move between slides · F full screen · P presenter view</p></div>`;
+    ${pres ? '' : `<div class="note-panel"><div class="eyebrow">Facilitator note</div><p>${esc(s.n)}</p>${steps ? `<p class="small muted">This slide reveals its points one at a time: ${Math.min(L.step, steps)} of ${steps} shown. Faded points are still to come.</p>` : ''}</div>
+    <p class="small muted hint">← → or click the slide in full screen · F full screen · P presenter view</p>`}</div>`;
 }
-const thumbLabel = (l, s) => s.t === 'cover' ? 'Title' : s.t === 'check' ? 'Quick check' : s.t === 'section' ? `${s.k}: ${s.h}` : s.h || s.k;
 
 // ----- presenter view -----
 const fmt = ms => { const t = Math.max(0, Math.floor(ms / 1000)); return `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; };
 function elapsed() { return L.clock.run ? L.clock.acc + (Date.now() - L.clock.since) : L.clock.acc; }
 function paceText(l) {
   const d = deckOf(l), plannedMs = l.minutes * 60000;
-  const expected = plannedMs * L.slide / d.length, diff = elapsed() - expected;
-  const mins = Math.round(Math.abs(diff) / 60000);
+  const expected = plannedMs * L.slide / d.length, diff = elapsed() - expected, mins = Math.round(Math.abs(diff) / 60000);
   return { over: elapsed() > plannedMs, text: mins < 1 ? 'On pace' : diff > 0 ? `${mins} min behind` : `${mins} min ahead` };
 }
 function presenterHTML(l) {
-  const d = deckOf(l), s = d[L.slide], next = d[L.slide + 1], pace = paceText(l);
+  const d = deckOf(l), s = d[L.slide], next = d[L.slide + 1], pace = paceText(l), steps = stepsOf(s);
   const opt = s.t === 'check' ? s.o[s.a] : '', stop = /[.!?”"]$/.test(opt) ? '' : '.';
   const answer = s.t === 'check' ? `<div class="note ans"><b>Answer: ${LETTERS[s.a]}</b> ${esc(opt)}${stop} ${esc(s.why)}</div>` : '';
   return `<div class="pv">
-    <div class="pv-top"><div class="ttl"><div class="k">Presenter view · Session ${l.n}</div><b>${esc(l.title)}</b></div>
+    <div class="pv-top"><div class="ttl"><div class="k">Presenter view · ${sessLabel(l)}</div><b>${esc(l.title)}</b></div>
       <div class="pv-clock"><b id="pvClock">${fmt(elapsed())}</b><small>of ${l.minutes}:00</small><button class="btn sm" id="pvRun">${L.clock.run ? 'Pause' : 'Start'}</button><button class="btn sm" id="pvReset">Reset</button></div>
+      <button class="btn sm" id="pvConf" aria-pressed="${celebrate()}">Confetti: ${celebrate() ? 'on' : 'off'}</button>
       <span class="pv-link ${L.linked ? 'on' : ''}" id="pvLink">${L.linked ? 'Projector window connected' : 'No projector window'}</span>
       <button class="btn sm primary" id="pvOpen">Open projector window</button><button class="btn sm" id="pvExit">Exit presenter view</button></div>
     <div class="pv-main">
-      <div class="pv-cur">${slideHTML(l, { i: L.slide, picks: L.picks })}</div>
+      <div class="pv-cur stage-host fill">${slideHTML(l, { i: L.slide, picks: L.picks, step: L.step, reveal: 'ghost', fit: 'box' })}</div>
       <div class="pv-side">
-        <section class="panel"><div class="pv-time ${pace.over ? 'over' : ''}"><span>Slide <b>${L.slide + 1}</b> of ${d.length}</span><span id="pvPace">${pace.text}</span></div></section>
+        <section class="panel"><div class="pv-time ${pace.over ? 'over' : ''}"><span>Slide <b>${L.slide + 1}</b> of ${d.length}${steps ? ` · point ${Math.min(L.step, steps)} of ${steps}` : ''}</span><span id="pvPace">${pace.text}</span></div></section>
         <section class="panel"><h3>Speaker notes</h3><p class="pv-notes">${esc(s.n)}</p>${answer}</section>
-        <section class="panel"><h3>Next</h3>${next ? `<div class="pv-next">${slideHTML(l, { i: L.slide + 1, picks: L.picks, still: true })}</div>` : '<p class="muted">End of the deck.</p>'}</section>
-        <p class="pv-help">← → or Space to move · Esc leaves presenter view. Answer quick checks here or on the projector; both stay in step.</p>
+        <section class="panel"><h3>Next</h3>${next ? `<div class="pv-next">${slideHTML(l, { i: L.slide + 1, picks: L.picks, still: true, fit: 'width' })}</div>` : '<p class="muted">End of the deck.</p>'}</section>
+        <p class="pv-help">← → or Space to move; faded points are still hidden on the projector. Esc leaves presenter view.</p>
       </div>
     </div>
     ${deckBar(l)}
@@ -473,37 +560,55 @@ function presenterHTML(l) {
 
 // The projector window and the presenter view talk over a BroadcastChannel (same browser, same site).
 const chan = 'BroadcastChannel' in window ? new BroadcastChannel('ll-present') : null;
-function broadcast() { if (chan && L && L.mode === 'presenter') chan.postMessage({ type: 'state', id: L.id, slide: L.slide, picks: L.picks }); }
+function broadcast() { if (chan && L && L.mode === 'presenter') chan.postMessage({ type: 'state', id: L.id, slide: L.slide, step: L.step, picks: L.picks }); }
 let tick = null;
 function startTick() {
   clearInterval(tick);
   tick = setInterval(() => {
     if (!L || L.mode !== 'presenter') { clearInterval(tick); return; }
     const c = $('#pvClock'); if (c) c.textContent = fmt(elapsed());
-    const l = lessons.find(x => x.id === L.id), p = $('#pvPace'), pace = paceText(l);
+    const p = $('#pvPace'), pace = paceText(lessonOf(L.id));
     if (p) { p.textContent = pace.text; p.parentElement.classList.toggle('over', pace.over); }
   }, 1000);
 }
 
+// Moving forward reveals the next point first; moving back hides it again.
+function stepForward(l) {
+  const d = deckOf(l);
+  if (L.step < stepsOf(d[L.slide])) L.step++;
+  else if (L.slide < d.length - 1) { L.slide++; L.step = 0; }
+  else return false;
+  return true;
+}
+function stepBack(l) {
+  const d = deckOf(l);
+  if (L.step > 0 && L.step <= stepsOf(d[L.slide])) L.step--;
+  else if (L.slide > 0) { L.slide--; L.step = stepsOf(d[L.slide]); }
+  else return false;
+  return true;
+}
 function bindClass(l) {
   const d = deckOf(l);
-  const go = i => { L.slide = Math.max(0, Math.min(d.length - 1, i)); renderLesson(); broadcast(); };
-  $$('[data-slide]').forEach(b => b.onclick = () => go(+b.dataset.slide));
-  $('#prevS').onclick = () => go(L.slide - 1);
+  const show = () => { renderLesson(); broadcast(); };
+  $$('[data-slide]').forEach(b => b.onclick = () => { L.slide = +b.dataset.slide; L.step = ALL; show(); });
+  $('#prevS').onclick = () => { if (stepBack(l)) show(); };
   $('#nextS').onclick = () => {
-    if (L.slide < d.length - 1) return go(L.slide + 1);
+    if (stepForward(l)) return show();
     if (L.mode === 'pres') return exitPres();
     if (L.mode === 'presenter') return exitPresenter();
-    location.hash = `s/${l.id}/quiz`;
+    if (!l.mock) location.hash = `s/${l.id}/quiz`;
   };
   $('#presS') && ($('#presS').onclick = () => { L.mode = 'pres'; renderLesson(); enterFullscreen(); });
   $('#pvS') && ($('#pvS').onclick = () => enterPresenter());
+  $('#printS') && ($('#printS').onclick = () => window.open(`${location.origin}/#print/${l.id}/slides`, '_blank'));
   $('#exitS') && ($('#exitS').onclick = exitPres);
   $('#notesS') && ($('#notesS').onclick = () => { L.notes = !L.notes; renderLesson(); });
-  $$('[data-qk]').forEach(b => b.onclick = () => pickAnswer(l, L.slide, +b.dataset.qk));
+  if (L.mode === 'pres') $('#stage').onclick = e => { if (!e.target.closest('button')) $('#nextS').click(); };
+  $$('[data-qk]').forEach(b => b.onclick = e => { e.stopPropagation(); pickAnswer(l, L.slide, +b.dataset.qk); });
   if (L.mode === 'presenter') {
     $('#pvRun').onclick = () => { if (L.clock.run) { L.clock.acc = elapsed(); L.clock.run = false; } else { L.clock.since = Date.now(); L.clock.run = true; } renderLesson(); };
     $('#pvReset').onclick = () => { L.clock = { acc: 0, since: Date.now(), run: L.clock.run }; renderLesson(); };
+    $('#pvConf').onclick = () => { try { localStorage.setItem('ll-confetti', celebrate() ? 'off' : 'on'); } catch {} renderLesson(); };
     $('#pvOpen').onclick = openProjector;
     $('#pvExit').onclick = exitPresenter;
     startTick();
@@ -524,8 +629,9 @@ function openProjector() {
   const w = window.open(`${location.origin}/#proj/${L.id}`, 'll-projector', 'popup,width=1280,height=720');
   if (!w) toast('Allow pop-ups for this site to open the projector window');
 }
+// Correct answers always get a quiet highlight; confetti only when switched on (presenter view, Account, or ?confetti=1).
 function confetti(el) {
-  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!el || !celebrate() || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const box = document.createElement('div'); box.className = 'confetti';
   const colours = ['#E0AE4C', '#57C990', '#3BA3B0', '#F28C82', '#EEF2F8'];
   box.innerHTML = Array.from({ length: 60 }, () => `<i style="--x:${Math.random() * 100}%;--c:${colours[Math.floor(Math.random() * colours.length)]};--d:${1.2 + Math.random() * 1.4}s;--w:${Math.random() * .3}s;--dx:${(Math.random() - .5) * 200}px;--r:${(Math.random() - .5) * 720}deg"></i>`).join('');
@@ -535,19 +641,20 @@ function enterFullscreen(el = document.documentElement) { if (!document.fullscre
 function exitPres() { if (!L) return; L.mode = 'normal'; L.notes = false; if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); renderLesson(); }
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && L?.mode === 'pres') { L.mode = 'normal'; L.notes = false; renderLesson(); } });
 
-// ----- projector window: shows only the slide, follows the presenter view -----
-let P = null; // { id, slide, picks }
+// ----- projector window: only the slide, letterboxed, following the presenter view -----
+let P = null; // { id, slide, step, picks }
 function renderProjector() {
-  const l = lessons.find(x => x.id === P.id);
-  document.body.classList.add('projector');
-  document.body.innerHTML = `<div class="proj">${slideHTML(l, { i: P.slide, picks: P.picks })}<div class="proj-hint" id="projHint">Click anywhere for full screen · ← → move slides</div></div>`;
+  const l = lessonOf(P.id);
+  document.body.className = 'projector';
+  document.body.innerHTML = `<div class="proj stage-host fill">${slideHTML(l, { i: P.slide, picks: P.picks, step: P.step, reveal: 'hide', fit: 'box' })}</div>${P.hint ? '<div class="proj-hint" id="projHint">Click anywhere for full screen · ← → move slides</div>' : ''}`;
   document.title = `${l.title} · Projector`;
+  fitFrames();
   $$('[data-qk]').forEach(b => b.onclick = e => { e.stopPropagation(); chan?.postMessage({ type: 'pick', id: P.id, slide: P.slide, choice: +b.dataset.qk }); });
 }
 function startProjector(id) {
-  P = { id, slide: 0, picks: {} };
+  P = { id, slide: 0, step: 0, picks: {}, hint: true };
   renderProjector();
-  document.addEventListener('click', () => { enterFullscreen(); $('#projHint')?.remove(); });
+  document.addEventListener('click', () => { enterFullscreen(); P.hint = false; $('#projHint')?.remove(); });
   document.addEventListener('keydown', e => {
     if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); chan?.postMessage({ type: 'nav', id: P.id, dir: 1 }); }
     if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); chan?.postMessage({ type: 'nav', id: P.id, dir: -1 }); }
@@ -555,10 +662,9 @@ function startProjector(id) {
   if (!chan) { document.body.innerHTML = '<p style="color:#fff;padding:24px">This browser cannot link a projector window. Use Present (full screen) instead.</p>'; return; }
   chan.onmessage = ({ data }) => {
     if (data.type === 'state' && data.id === P.id) {
-      const prevPick = P.picks[data.slide], pick = data.picks[data.slide];
-      P.slide = data.slide; P.picks = data.picks; renderProjector();
-      const s = decks[P.id][P.slide];
-      if (prevPick === undefined && pick !== undefined && pick === s.a) confetti($('#stage'));
+      const before = P.picks[data.slide], after = data.picks[data.slide];
+      Object.assign(P, { slide: data.slide, step: data.step, picks: data.picks }); renderProjector();
+      if (before === undefined && after !== undefined && after === decks[P.id][P.slide].a) confetti($('#stage'));
     }
   };
   chan.postMessage({ type: 'hello', id });
@@ -568,12 +674,35 @@ function startProjector(id) {
 let lastHello = 0;
 if (chan) chan.addEventListener('message', ({ data }) => {
   if (P || !L || L.mode !== 'presenter' || data.id !== L.id) return;
-  const l = lessons.find(x => x.id === L.id);
+  const l = lessonOf(L.id);
   if (data.type === 'hello') { lastHello = Date.now(); if (!L.linked) { L.linked = true; renderLesson(); } broadcast(); }
-  if (data.type === 'nav') { L.slide = Math.max(0, Math.min(deckOf(l).length - 1, L.slide + data.dir)); renderLesson(); broadcast(); }
+  if (data.type === 'nav') { if (data.dir > 0 ? stepForward(l) : stepBack(l)) { renderLesson(); broadcast(); } }
   if (data.type === 'pick' && data.slide === L.slide) pickAnswer(l, data.slide, data.choice);
 });
 setInterval(() => { if (L?.linked && Date.now() - lastHello > 10000) { L.linked = false; if (L.mode === 'presenter') renderLesson(); } }, 3000);
+
+// ----- print and PDF: slides (one 16:9 page each) or handouts (thumbnail with notes, or with space to write) -----
+function startPrint(id, mode) {
+  const l = lessonOf(id), d = deckOf(l);
+  if (!['slides', 'facilitator', 'participant'].includes(mode)) mode = 'slides';
+  const thumb = i => slideHTML(l, { i, step: ALL, still: true, fit: '0.3' });
+  const handout = d.map((s, i) => {
+    const opt = s.t === 'check' ? s.o[s.a] : '';
+    const right = mode === 'facilitator'
+      ? `<p>${esc(s.n)}</p>${s.t === 'check' ? `<p><b>Answer: ${LETTERS[s.a]}</b> ${esc(opt)} ${esc(s.why)}</p>` : ''}`
+      : '<div class="lines"><i></i><i></i><i></i><i></i></div>';
+    return `<article class="ho"><div class="ho-thumb">${thumb(i)}</div><div class="ho-text"><div class="eyebrow">Slide ${i + 1} of ${d.length}</div><h3>${esc(thumbLabel(l, s))}</h3>${right}</div></article>`;
+  }).join('');
+  document.body.className = 'printing';
+  document.body.innerHTML = `<div class="pr-bar no-print"><div><div class="eyebrow">Print or save as PDF</div><b>${sessLabel(l)}</b></div>
+      <div class="row">${[['slides', 'Slides'], ['facilitator', 'Facilitator handout'], ['participant', 'Participant handout']].map(([m, t]) => `<a class="btn ${m === mode ? 'on' : ''}" href="#print/${id}/${m}">${t}</a>`).join('')}
+      <button class="btn primary" data-print>Print or save as PDF</button></div></div>
+    <style>@page { ${mode === 'slides' ? 'size: 1280px 720px; margin: 0' : 'size: A4 portrait; margin: 14mm'} }</style>
+    <main class="pr pr-${mode}">${mode === 'slides' ? d.map((s, i) => `<section class="pp">${slideHTML(l, { i, step: ALL, still: true, fit: 'page' })}</section>`).join('')
+      : `<header class="ho-head"><div class="eyebrow">${mode === 'facilitator' ? 'Facilitator handout' : 'Participant handout'}</div><h1>${esc(l.title)}</h1><p>${esc(l.intro)}</p></header>${handout}`}</main>`;
+  document.title = `${l.title} · ${mode === 'slides' ? 'Slides' : 'Handout'}`;
+  fitFrames();
+}
 
 // ----- quiz -----
 function quizTab(l) {
@@ -629,7 +758,7 @@ window.addEventListener('beforeunload', () => { if (pending.size) flush(); });
 
 // ---------- start ----------
 async function start() {
-  const pm = location.hash.match(/^#proj\/([a-z]+)/);
+  const pm = location.hash.match(/^#proj\/([a-z_]+)/);
   if (pm && decks[pm[1]]) { startProjector(pm[1]); return; }
   route();
   try {
