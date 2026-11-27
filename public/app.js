@@ -1,17 +1,17 @@
 import { lessons, totalMinutes } from './lessons.js';
-import { decks } from './decks.js';
+import { decks, reference } from './decks.js';
 
 // ---------- constants ----------
 const CACHE_KEY = 'leadership-lab-v2';
 const PHASES = [
-  { key: 'SELF', name: 'Self', c: 'var(--p1)', blurb: 'How you show up: credibility, values and the influence you already have.' },
-  { key: 'PEOPLE', name: 'People', c: 'var(--p2)', blurb: 'Communication, trust and feedback: the everyday work of leading people.' },
+  { key: 'SELF', name: 'Self', c: 'var(--p1)', blurb: 'How you show up: credibility, balancing task, team and individual, and being a good follower.' },
+  { key: 'PEOPLE', name: 'People', c: 'var(--p2)', blurb: 'Communication, trust, feedback and team building: the everyday work of leading people.' },
   { key: 'PERFORMANCE', name: 'Performance', c: 'var(--p3)', blurb: 'Delegation, motivation and decisions that get work done through others.' },
-  { key: 'INTEGRATE', name: 'Integrate', c: 'var(--p4)', blurb: 'Bring the day’s skills together in one evolving team situation.' },
-  { key: 'APPLY', name: 'Apply', c: 'var(--p5)', blurb: 'Turn the day into one specific action you will take at work.' },
+  { key: 'INTEGRATE', name: 'Integrate', c: 'var(--p4)', blurb: 'Bring the course’s skills together in one evolving team situation.' },
+  { key: 'APPLY', name: 'Apply', c: 'var(--p5)', blurb: 'Turn the course into one specific action you will take at work.' },
 ];
 const TABS = [['plan', 'Facilitator plan'], ['class', 'Class'], ['quiz', 'Quiz'], ['notes', 'Notes']];
-const PAGES = ['home', 'sessions', 'plan', 'help', 'account', 'team'];
+const PAGES = ['home', 'sessions', 'plan', 'reference', 'help', 'account', 'team'];
 const LETTERS = 'ABCDEF';
 
 const $ = s => document.querySelector(s);
@@ -82,7 +82,7 @@ document.addEventListener('click', e => { if (e.target.closest('[data-theme-togg
 
 // ---------- shell ----------
 function shell() {
-  const items = [['home', 'Home'], ['sessions', 'Sessions', lessons.length], ['plan', 'Course plan'], ['help', 'Help'], ['account', 'Account']];
+  const items = [['home', 'Home'], ['sessions', 'Sessions', lessons.length], ['plan', 'Course plan'], ['reference', 'Reference'], ['help', 'Help'], ['account', 'Account']];
   if (me?.admin) items.push(['team', 'Participants']);
   $('#nav').innerHTML = items.map(([id, label, n]) => `<button class="${page === id ? 'on' : ''}" data-go="${id}" ${page === id ? 'aria-current="page"' : ''}>${label}${n ? `<span class="count">${n}</span>` : ''}</button>`).join('');
   $('#tabs').innerHTML = [['home', 'Home'], ['sessions', 'Sessions'], ['plan', 'Plan'], ['account', 'Account']]
@@ -120,11 +120,12 @@ function renderPage() {
   const v = $('#view');
   if (page === 'sessions') v.innerHTML = sessionsHTML();
   else if (page === 'plan') v.innerHTML = planHTML();
+  else if (page === 'reference') v.innerHTML = referenceHTML();
   else if (page === 'help') v.innerHTML = helpHTML();
   else if (page === 'account') { v.innerHTML = accountHTML(); bindAccount(); }
   else if (page === 'team') { v.innerHTML = `<div class="page-head"><div class="eyebrow">Facilitator</div><h1>Participants</h1><p>Loading…</p></div>`; loadTeam(); }
   else { v.innerHTML = homeHTML(); bindHome(); }
-  document.title = ({ sessions: 'Sessions · ', plan: 'Course plan · ', help: 'Help · ', account: 'Account · ', team: 'Participants · ' }[page] || '') + 'Leadership Lab';
+  document.title = ({ sessions: 'Sessions · ', plan: 'Course plan · ', reference: 'Reference · ', help: 'Help · ', account: 'Account · ', team: 'Participants · ' }[page] || '') + 'Leadership Lab';
 }
 
 // ---------- cards ----------
@@ -153,7 +154,7 @@ function homeHTML() {
   const hours = Math.floor(totalMinutes / 60), mins = totalMinutes % 60;
   return `<section class="hero">
     <div class="top"><div><div class="eyebrow">Leadership training · Facilitator material</div><h1>Leadership Lab</h1>
-      <p class="sub">${me ? `Welcome, ${esc(me.name.split(' ')[0])}. ` : ''}A practical one-day course: ${lessons.length} sessions in ${PHASES.length} phases, ${hours} h ${mins} min of teaching from 09:00 to 16:00. Present each session, run the activity and decision check, and leave with one action for work.</p></div>
+      <p class="sub">${me ? `Welcome, ${esc(me.name.split(' ')[0])}. ` : ''}A practical two-day course: ${lessons.length} sessions in ${PHASES.length} phases, ${hours} h ${mins} min of teaching. Present each session, run the activity and decision checks, and leave with one action for work.</p></div>
       <div class="wk"><div class="n">${curNo}<small>/${PHASES.length}</small></div><div class="ph">Phase you’re working in</div></div></div>
     <div class="phase-strip" role="group" aria-label="Training phases">${PHASES.map((p, i) => {
       const ls = inPhase(p.key), d = ls.filter(isDone).length;
@@ -170,7 +171,7 @@ function homeHTML() {
       <p><b>Arrow keys</b> or the on-screen buttons move between slides. <kbd>F</kbd> toggles full screen, <kbd>N</kbd> shows the facilitator note, <kbd>Esc</kbd> leaves.</p>
       <p><b>Quick checks</b> on the slides: let the room call out an answer, then tap it. The right answer gets confetti and the reasoning appears underneath.</p>
       <p><b>Quiz</b> and <b>Notes</b> are for each participant. Their answer, private reflection and completed sessions save to their own account.</p>
-      <p><b>Course plan</b> lays the nine sessions out across the day with breaks, so you can keep time.</p>
+      <p><b>Course plan</b> lays the sessions out across two days with breaks, so you can keep time. <b>Reference</b> has the ten rules of followership, the leadership check sheet and the team checklists on one printable page.</p>
       <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b><span>sessions done</span></div><div class="stat"><b>${hours}h ${mins}m</b><span>teaching time</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b><span>notes written</span></div></div>
     </section>
   </div>`;
@@ -184,25 +185,46 @@ function sessionsHTML() {
 }
 
 // ---------- course plan ----------
+// Suggested two-day timetable. Session lengths come from the course; welcome, breaks and close are suggestions.
+const DAYS = [
+  { label: 'Day 1', focus: 'Self and People', items: [['Welcome, introductions and the course plan', 15], 'foundations', 'functional', ['Morning break', 15], 'followership', ['Lunch', 60], 'communication', 'trust', ['Afternoon break', 15], 'feedback', 'teamwork', ['Day 1 review and close', 10]] },
+  { label: 'Day 2', focus: 'Performance, Integrate and Apply', items: [['Recap of day 1', 15], 'delegation', 'motivation', ['Morning break', 15], 'decisions', ['Lunch', 60], 'capstone', 'commitment', ['Evaluation and close', 10]] },
+];
 function dayPlan() {
-  // Suggested timetable: 09:00 start, a short welcome, breaks after sessions 02 and 07, lunch after 04, a short close. Ends 16:00.
-  const after = { communication: ['Morning break', 15], feedback: ['Lunch', 60], motivation: ['Afternoon break', 15] };
-  const rows = []; let t = 9 * 60;
-  const add = (label, min, l) => { rows.push({ start: t, end: t + min, label, min, l }); t += min; };
-  add('Welcome, introductions and the day’s plan', 15);
-  for (const l of lessons) { add(l.title, l.minutes, l); if (after[l.id]) add(...after[l.id]); }
-  add('Evaluation and close', 10);
-  return rows;
+  return DAYS.map(d => {
+    const rows = []; let t = 9 * 60;
+    for (const it of d.items) {
+      const l = typeof it === 'string' ? lessons.find(x => x.id === it) : null;
+      const [label, min] = l ? [l.title, l.minutes] : it;
+      rows.push({ start: t, end: t + min, label, min, l }); t += min;
+    }
+    return { ...d, rows };
+  });
 }
 function planHTML() {
-  const rows = dayPlan();
-  return `<div class="page-head"><div class="eyebrow">Suggested timetable</div><h1>Course plan</h1><p>The nine sessions across one day, ${clock(rows[0].start)}–${clock(rows.at(-1).end)}. Session lengths come from the course; the welcome, breaks and close are a suggestion to adjust for your group.</p></div>
+  const days = dayPlan();
+  return `<div class="page-head"><div class="eyebrow">Suggested timetable</div><h1>Course plan</h1><p>${lessons.length} sessions over two days. Session lengths come from the course; the welcome, breaks and close are a suggestion to adjust for your group.</p></div>
+  ${days.map(d => `<div class="phase-sec" style="--c:var(--brass)"><h3>${d.label} · ${clock(d.rows[0].start)}–${clock(d.rows.at(-1).end)}</h3><span class="muted small">${d.focus}</span></div>
   <div class="tbl-wrap"><table><thead><tr><th>Time</th><th>Session</th><th>Phase</th><th>Activity</th><th></th></tr></thead><tbody>
-  ${rows.map(r => r.l
+  ${d.rows.map(r => r.l
     ? `<tr><td class="time">${clock(r.start)}–${clock(r.end)}</td><td><b>${r.l.n}</b> ${esc(r.l.title)}<div class="small muted">${r.min} min</div></td><td><span class="ph" style="--c:${phaseOf(r.l).c}"></span>${phaseOf(r.l).name}</td><td>${esc(r.l.activity)}</td><td>${isDone(r.l) ? '<span class="chip ok">✓</span>' : `<button class="btn sm" data-open="${r.l.id}/plan">Open</button>`}</td></tr>`
     : `<tr class="brk"><td class="time">${clock(r.start)}–${clock(r.end)}</td><td colspan="4">${esc(r.label)} · ${r.min} min</td></tr>`).join('')}
-  </tbody></table></div>
+  </tbody></table></div>`).join('')}
   <div class="row no-print"><button class="btn" data-print>Print the course plan</button></div>`;
+}
+
+// ---------- reference ----------
+function referenceHTML() {
+  const block = r => {
+    const from = lessons.find(l => l.id === r.id);
+    const body = r.kind === 'ol' ? `<ol class="list">${r.items.map(t => `<li>${esc(t)}</li>`).join('')}</ol>`
+      : r.kind === 'groups' ? `<div class="ref-groups">${r.items.map(([h, items]) => `<div><b>${esc(h)}</b><ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div>`
+      : `<div class="steps">${r.items.map(([h, p]) => `<div class="step ref-pair"><b>${esc(h)}</b><span>${esc(p)}</span></div>`).join('')}</div>`;
+    return `<section class="panel"><h3>${esc(r.title)}</h3>${body}<p class="small muted">From Session ${from.n}: <button class="link" data-open="${from.id}/plan">${esc(from.title)}</button></p></section>`;
+  };
+  return `<div class="page-head"><div class="eyebrow">Quick reference</div><h1>Reference</h1><p>The rules, checklists and models from the course on one page. Print it as a handout or keep it open while you teach.</p></div>
+  <div class="grid2">${reference.map(block).join('')}</div>
+  <div class="row no-print"><button class="btn" data-print>Print the reference</button></div>`;
 }
 
 // ---------- help ----------
@@ -378,7 +400,7 @@ function slideHTML(l, { i, picks = {}, notes = false, still = false }) {
     case 'cover': return wrap('cover', `<div class="body"><div class="kick">Phase ${phaseNo(l)} · ${esc(phaseOf(l).name)} · Session ${l.n}</div><h3>${esc(l.title)}</h3><p class="lede">${esc(l.intro)}</p></div><div class="wave"></div>`);
     case 'section': return wrap('cover section', `<div class="body"><div class="kick">${esc(s.k)}</div><h3>${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div><div class="wave"></div>`);
     case 'statement': return wrap('statement', `${kick}<div class="body"><h3 class="big">${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div>`);
-    case 'points': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + 1)}</span>${esc(t)}</li>`).join('')}</ul></div>`);
+    case 'points': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + (s.from || 1))}</span>${esc(t)}</li>`).join('')}</ul></div>`);
     case 'cards': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cards">${s.items.map(([h, p]) => `<div><b>${esc(h)}</b><span>${esc(p)}</span></div>`).join('')}</div></div>`);
     case 'flow': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-flow">${s.items.map(([h, p], j) => `<div><b>Step ${j + 1}</b><span>${esc(h)}</span><p>${esc(p)}</p></div>`).join('')}</div></div>`);
     case 'compare': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cmp">${[s.a, s.b].map(([h, items], j) => `<div class="${j ? 'yes' : 'no'}"><b>${esc(h)}</b><ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div></div>`);

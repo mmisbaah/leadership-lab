@@ -8,7 +8,7 @@ const MAX_FAILS = 8;
 const LOCK_SECONDS = 900;
 const MIN_PASSWORD = 8;
 const NOTE_MAX = 4000;
-const LESSON_IDS = new Set(['foundations', 'communication', 'trust', 'feedback', 'delegation', 'motivation', 'decisions', 'capstone', 'commitment']);
+const LESSON_IDS = new Set(['foundations', 'functional', 'followership', 'communication', 'trust', 'feedback', 'teamwork', 'delegation', 'motivation', 'decisions', 'capstone', 'commitment']);
 const PUBLIC = new Set(['/healthz', '/favicon.ico', '/manifest.webmanifest', '/assets/icon.svg', '/assets/icon-192.png', '/assets/icon-512.png']);
 
 const te = new TextEncoder();

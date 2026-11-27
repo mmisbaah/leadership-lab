@@ -421,3 +421,8 @@ body.projector { background: #0B1528; overflow: hidden; }
 .outline .link { font-weight: inherit; text-align: left; color: var(--ink); font-size: .9rem; }
 .outline .link:hover { color: var(--brass); }
 .outline .link { display: inline; }
+.ref-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.ref-groups b { font-family: var(--f-display); font-size: 1.05rem; letter-spacing: .04em; text-transform: uppercase; color: var(--brass); }
+.ref-groups ul { margin-top: 6px; padding-left: 18px; display: grid; gap: 4px; font-size: .88rem; }
+.step.ref-pair { grid-template-columns: minmax(120px, 34%) minmax(0, 1fr); align-items: start; }
+.step.ref-pair span { color: var(--ink-2); font-size: .9rem; }
