@@ -4,7 +4,7 @@
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
   "assets": { "directory": "public", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "single-page-application" },
-  "kv_namespaces": [{ "binding": "USERS", "id": "REPLACE_WITH_KV_ID" }],
+  "kv_namespaces": [{ "binding": "USERS", "id": "aa77f01558b847edb39d2a1851a71a07" }],
   "routes": [{ "pattern": "leadership.mellowpilot.com", "custom_domain": true }],
   "observability": { "enabled": true }
 }
