@@ -74,7 +74,7 @@ const cookie = (value, maxAge) => `${COOKIE}=${value}; Path=/; HttpOnly; Secure;
 const getUser = async (env, id) => { const u = await env.USERS.get('user:' + id); return u ? JSON.parse(u) : null; };
 const putUser = (env, u) => env.USERS.put('user:' + u.id, JSON.stringify(u));
 const getProgress = async (env, id) => JSON.parse(await env.USERS.get('progress:' + id) || '{}');
-const publicUser = u => ({ id: u.id, name: u.name, admin: !!u.admin, created: u.created });
+const publicUser = u => ({ id: u.id, name: u.name, admin: !!u.admin, locked: !!u.locked, created: u.created });
 
 async function listUsers(env) {
   const ids = [];
@@ -156,6 +156,8 @@ async function api(request, env, user, path) {
   if (path === '/api/me' && request.method === 'GET') return json(publicUser(user));
 
   if (path === '/api/password' && request.method === 'POST') {
+    // Demo accounts are shared, so nobody signed in to one may change its password. A facilitator can still reset it.
+    if (user.locked) return json({ error: 'This is a demo account, so its password can’t be changed.' }, 403);
     const { current = '', next = '' } = body;
     if (!same(await hashPassword(String(current), unb64u(user.salt), user.iter), user.hash)) return json({ error: 'Your current password is wrong.' }, 400);
     if (String(next).length < MIN_PASSWORD) return json({ error: `Use at least ${MIN_PASSWORD} characters.` }, 400);
@@ -203,7 +205,7 @@ async function api(request, env, user, path) {
     if (!old && !name) return json({ error: 'Enter the participant’s name.' }, 400);
     if (old && id === user.id) return json({ error: 'Change your own password under “Your account”.' }, 400);
     const record = {
-      id, name: name || old.name, admin: old ? old.admin : body.admin === true,
+      id, name: name || old.name, admin: old ? old.admin : body.admin === true, locked: old ? !!old.locked : body.locked === true,
       ...await newHash(password), ver: (old?.ver || 0) + 1, created: old?.created || new Date().toISOString(),
     };
     await putUser(env, record);

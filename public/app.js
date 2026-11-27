@@ -262,10 +262,11 @@ function helpHTML() {
 function accountHTML() {
   return `<div class="page-head"><div class="eyebrow">Your account</div><h1>${esc(me?.name || 'Account')}</h1><p>Signed in as <b>${esc(me?.id || '…')}</b> ${me?.admin ? ' · facilitator' : ''}.</p></div>
   <div class="grid2">
-    <section class="panel"><h3>Change your password</h3><form id="pwForm" class="list">
+    ${me?.locked ? `<section class="panel"><h3>Demo account</h3><p>This is a shared demo account, so its password can’t be changed here.</p><p class="small muted">Progress and notes on this account are visible to anyone who signs in with it. Ask your facilitator for your own login to keep your work private.</p></section>`
+    : `<section class="panel"><h3>Change your password</h3><form id="pwForm" class="list">
       <div class="field"><label for="pwCur">Current password</label><input id="pwCur" type="password" autocomplete="current-password" required></div>
       <div class="field"><label for="pwNew">New password</label><input id="pwNew" type="password" autocomplete="new-password" minlength="8" required></div>
-      <p class="small muted">At least 8 characters.</p><div class="row"><button class="btn primary">Change password</button></div><p class="msg" id="pwMsg" role="status"></p></form></section>
+      <p class="small muted">At least 8 characters.</p><div class="row"><button class="btn primary">Change password</button></div><p class="msg" id="pwMsg" role="status"></p></form></section>`}
     <section class="panel"><h3>Your progress</h3>
       <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b> <span>sessions done</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.choice !== undefined).length}</b> <span>quizzes answered</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b> <span>notes written</span></div></div>
       <p class="muted small">Starting over clears your quiz answers, notes and completed sessions.</p>
@@ -276,7 +277,7 @@ function accountHTML() {
   </div>`;
 }
 function bindAccount() {
-  $('#pwForm').onsubmit = async e => {
+  if ($('#pwForm')) $('#pwForm').onsubmit = async e => {
     e.preventDefault();
     const msg = $('#pwMsg');
     try { await call('/api/password', { current: $('#pwCur').value, next: $('#pwNew').value }); msg.className = 'msg ok'; msg.textContent = 'Password changed.'; e.target.reset(); }
@@ -305,7 +306,7 @@ async function loadTeam() {
   $('#view').innerHTML = `<div class="page-head"><div class="eyebrow">Facilitator</div><h1>Participants</h1>
   <p>${rows.length} account${rows.length === 1 ? '' : 's'}. You see each person’s progress and how many notes they wrote, but not what the notes say.</p></div>
   <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Login ID</th><th>Progress</th><th>Notes</th><th>Last completed</th><th></th></tr></thead><tbody>
-  ${rows.map(r => `<tr><td>${esc(r.name)}${r.admin ? ' <span class="chip dim">facilitator</span>' : ''}</td><td class="mono">${esc(r.id)}</td>
+  ${rows.map(r => `<tr><td>${esc(r.name)}${r.admin ? ' <span class="chip dim">facilitator</span>' : ''}${r.locked ? ' <span class="chip dim">demo</span>' : ''}</td><td class="mono">${esc(r.id)}</td>
     <td style="white-space:nowrap"><span class="dots" title="${r.done.length} of ${lessons.length}">${lessons.map(l => `<span class="${r.done.includes(l.id) ? 'on' : ''}" title="${esc(l.title)}"></span>`).join('')}</span>${r.done.length}/${lessons.length}</td>
     <td>${r.notes}</td><td>${when(r.last)}</td>
     <td style="white-space:nowrap">${r.id === me.id ? '<span class="small muted">you</span>' : `<button class="link" data-reset="${esc(r.id)}">New password</button> · <button class="link danger" data-remove="${esc(r.id)}" data-name="${esc(r.name)}">Remove</button>`}</td></tr>`).join('')}
@@ -315,6 +316,7 @@ async function loadTeam() {
     <div class="field"><label for="nId">Login ID</label><input id="nId" required autocapitalize="none" spellcheck="false" placeholder="e.g. aishath"></div>
     <div class="field"><label for="nPw">Starting password</label><input id="nPw" required minlength="8" placeholder="8+ characters"></div></div>
     <label class="check"><input type="checkbox" id="nAdmin"> Facilitator (can manage accounts)</label>
+    <label class="check"><input type="checkbox" id="nLocked"> Demo account (shared; its password can’t be changed by whoever signs in)</label>
     <div class="row"><button class="btn primary">Add account</button><button type="button" class="btn" id="genPw">Suggest a password</button></div>
     <p class="msg" id="addMsg" role="status"></p></form></section>`;
   const pw = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
@@ -323,7 +325,7 @@ async function loadTeam() {
     e.preventDefault();
     try {
       const id = $('#nId').value.trim().toLowerCase(), password = $('#nPw').value;
-      await call('/api/users', { id, name: $('#nName').value, password, admin: $('#nAdmin').checked });
+      await call('/api/users', { id, name: $('#nName').value, password, admin: $('#nAdmin').checked, locked: $('#nLocked').checked });
       await loadTeam();
       const m = $('#addMsg'); m.className = 'msg ok'; m.textContent = `Account created. Give them login ID “${id}” and password “${password}”.`;
     } catch (err) { const m = $('#addMsg'); m.className = 'msg bad'; m.textContent = err.message; }
