@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "leadership-lab",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "public", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "single-page-application" },
+  "kv_namespaces": [{ "binding": "USERS", "id": "REPLACE_WITH_KV_ID" }],
+  "routes": [{ "pattern": "leadership.mellowpilot.com", "custom_domain": true }],
+  "observability": { "enabled": true }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "leadership-lab",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "create-admin": "node scripts/create-admin.mjs"
+  },
+  "devDependencies": { "wrangler": "^4.40.0" }
+}
