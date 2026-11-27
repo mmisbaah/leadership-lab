@@ -94,9 +94,9 @@ function loginPage({ error = '', id = '', next = '/', current = '' } = {}) {
   return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · Leadership Lab</title><meta name="theme-color" content="#142440"><link rel="icon" href="/assets/icon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest">
 <style>
-:root{--ink:#17243B;--ink2:#56627A;--paper:#F5F7FA;--card:#fff;--navy:#142440;--gold:#A87922;--bad:#A3312A;--line:#DCE3EA}
+:root{--ink:#16213A;--ink2:#56627A;--paper:#E4E9F0;--card:#fff;--navy:#13223F;--gold:#8E6512;--bad:#A3312A;--line:#D5DBE3}
 @media (prefers-color-scheme:dark){:root{--ink:#E5EAF2;--ink2:#A3AFC2;--paper:#0C1422;--card:#132036;--gold:#E0AE4C;--bad:#F08A80;--line:#24324A}}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
 main{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 24px;box-shadow:0 10px 30px rgba(20,36,64,.08)}
 .brand{display:flex;gap:12px;align-items:center;margin-bottom:20px}.brand svg{width:44px;height:44px;flex:none}
 .brand small{display:block;color:var(--gold);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}.brand b{font-size:1.25rem}
@@ -120,7 +120,7 @@ ${current ? `<p class="note">You're signed in as <b>${esc(current)}</b>. Sign in
 function signedInPage(next, setCookie) {
   const to = JSON.stringify(next).replace(/</g, '\\u003c');
   return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Signing in…</title><meta http-equiv="refresh" content="0;url=${esc(next)}"><style>body{font:15px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#F5F7FA;color:#17243B}</style></head>
+<title>Signing in…</title><meta http-equiv="refresh" content="0;url=${esc(next)}"><style>body{font:15px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#E4E9F0;color:#16213A}</style></head>
 <body><p>Signing in… <a href="${esc(next)}">Continue</a></p><script>location.replace(${to})</script></body></html>`,
     { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Set-Cookie': setCookie, ...SECURITY } });
 }

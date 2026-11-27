@@ -1,38 +1,41 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="neu">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#142440">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#13223F">
 <title>Leadership Lab</title>
 <meta name="description" content="An interactive one-day leadership training guide for working adults.">
 <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="stylesheet" href="/styles.css">
+<link rel="preload" href="/assets/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/barlow-condensed-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/app.css">
+<script>
+// Apply the saved theme before first paint so the page doesn't flash the wrong one.
+(function () {
+  var t = null; try { t = localStorage.getItem('ll-theme'); } catch (e) {}
+  var dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.documentElement.classList.toggle('neu', !dark);
+})();
+</script>
 </head>
 <body>
-<div class="app">
-  <aside id="sidebar">
-    <div class="brand"><div class="mark">L</div><div><small>Leadership training</small><b>Leadership Lab</b></div></div>
-    <nav id="navigation" aria-label="Course"></nav>
-    <div class="sidefoot"><b>One day. Practical leadership.</b><br>Built for working adults. Your notes and progress are saved to your account.</div>
-  </aside>
-  <main>
-    <div class="top">
-      <div class="row"><button class="btn secondary mobile-menu" id="menuBtn" aria-label="Open menu">☰</button><span>Leadership Lab</span></div>
-      <small id="who">SELF · PEOPLE · PERFORMANCE</small>
-    </div>
-    <div class="main-inner" id="content" tabindex="-1"></div>
-  </main>
-</div>
-<div id="presentation" class="presentation" role="dialog" aria-modal="true" aria-label="Presentation view">
-  <div class="eyebrow" id="slideKicker"></div>
-  <div class="slide-body"><h2 id="slideTitle"></h2><p id="slideText"></p></div>
-  <div class="slide-foot"><span id="slideCount"></span>
-    <div class="actions"><button class="btn secondary" id="prevSlide">Previous</button><button class="btn" id="nextSlide">Next</button><button class="btn secondary" id="closeSlide">Close</button></div>
-  </div>
-</div>
+<aside class="rail" aria-label="Main navigation">
+  <div class="brand"><b>Leadership<br>Lab</b><span>Leadership training</span></div>
+  <nav class="nav" id="nav"></nav>
+  <div class="rail-foot" id="railFoot"></div>
+</aside>
+<header class="topbar">
+  <div><b>Leadership Lab</b><small>Leadership training</small></div>
+  <button class="theme-btn" data-theme-toggle type="button">Dark theme</button>
+</header>
+<main><div class="wrap" id="view" tabindex="-1"></div></main>
+<nav class="tabs" id="tabs" aria-label="Main navigation"></nav>
+<section class="lesson" id="lesson" hidden role="dialog" aria-modal="true" aria-labelledby="lessonTitle"></section>
 <script type="module" src="/app.js"></script>
 </body>
 </html>
