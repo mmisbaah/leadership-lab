@@ -158,7 +158,7 @@ function homeHTML() {
       <div class="wk"><div class="n">${curNo}<small>/${PHASES.length}</small></div><div class="ph">Phase you’re working in</div></div></div>
     <div class="phase-strip" role="group" aria-label="Training phases">${PHASES.map((p, i) => {
       const ls = inPhase(p.key), d = ls.filter(isDone).length;
-      return `<button style="--c:${p.c}" class="${p.key === cur ? 'cur' : ''}" data-phase="${p.key}" aria-pressed="${p.key === cur}"><b>${i + 1}</b><span>${p.name}</span><small>${ls.length} session${ls.length === 1 ? '' : 's'} · ${d}/${ls.length} done</small></button>`;
+      return `<button style="--c:${p.c}" class="${p.key === cur ? 'cur' : ''}" data-phase="${p.key}" aria-pressed="${p.key === cur}"><b>${i + 1}</b> <span>${p.name}</span><small>${ls.length} session${ls.length === 1 ? '' : 's'} · ${d}/${ls.length} done</small></button>`;
     }).join('')}</div>
   </section>
   <div class="quick"><button class="btn" data-go="plan">Course plan</button><button class="btn" data-open="${nx.id}/plan">${doneCount() === lessons.length ? 'Review the last session' : doneCount() ? `Continue: Session ${nx.n}` : 'Start with Session 01'}</button><button class="btn" data-present="${nx.id}">Present Session ${nx.n}</button></div>
@@ -172,7 +172,7 @@ function homeHTML() {
       <p><b>Quick checks</b> on the slides: let the room call out an answer, then tap it. The right answer gets confetti and the reasoning appears underneath.</p>
       <p><b>Quiz</b> and <b>Notes</b> are for each participant. Their answer, private reflection and completed sessions save to their own account.</p>
       <p><b>Course plan</b> lays the sessions out across two days with breaks, so you can keep time. <b>Reference</b> has the ten rules of followership, the leadership check sheet and the team checklists on one printable page.</p>
-      <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b><span>sessions done</span></div><div class="stat"><b>${hours}h ${mins}m</b><span>teaching time</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b><span>notes written</span></div></div>
+      <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b> <span>sessions done</span></div><div class="stat"><b>${hours}h ${mins}m</b> <span>teaching time</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b> <span>notes written</span></div></div>
     </section>
   </div>`;
 }
@@ -218,8 +218,8 @@ function referenceHTML() {
   const block = r => {
     const from = lessons.find(l => l.id === r.id);
     const body = r.kind === 'ol' ? `<ol class="list">${r.items.map(t => `<li>${esc(t)}</li>`).join('')}</ol>`
-      : r.kind === 'groups' ? `<div class="ref-groups">${r.items.map(([h, items]) => `<div><b>${esc(h)}</b><ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div>`
-      : `<div class="steps">${r.items.map(([h, p]) => `<div class="step ref-pair"><b>${esc(h)}</b><span>${esc(p)}</span></div>`).join('')}</div>`;
+      : r.kind === 'groups' ? `<div class="ref-groups">${r.items.map(([h, items]) => `<div><b>${esc(h)}</b> <ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div>`
+      : `<div class="steps">${r.items.map(([h, p]) => `<div class="step ref-pair"><b>${esc(h)}</b> <span>${esc(p)}</span></div>`).join('')}</div>`;
     return `<section class="panel"><h3>${esc(r.title)}</h3>${body}<p class="small muted">From Session ${from.n}: <button class="link" data-open="${from.id}/plan">${esc(from.title)}</button></p></section>`;
   };
   return `<div class="page-head"><div class="eyebrow">Quick reference</div><h1>Reference</h1><p>The rules, checklists and models from the course on one page. Print it as a handout or keep it open while you teach.</p></div>
@@ -251,14 +251,14 @@ function helpHTML() {
 
 // ---------- account ----------
 function accountHTML() {
-  return `<div class="page-head"><div class="eyebrow">Your account</div><h1>${esc(me?.name || 'Account')}</h1><p>Signed in as <b>${esc(me?.id || '…')}</b>${me?.admin ? ' · facilitator' : ''}.</p></div>
+  return `<div class="page-head"><div class="eyebrow">Your account</div><h1>${esc(me?.name || 'Account')}</h1><p>Signed in as <b>${esc(me?.id || '…')}</b> ${me?.admin ? ' · facilitator' : ''}.</p></div>
   <div class="grid2">
     <section class="panel"><h3>Change your password</h3><form id="pwForm" class="list">
       <div class="field"><label for="pwCur">Current password</label><input id="pwCur" type="password" autocomplete="current-password" required></div>
       <div class="field"><label for="pwNew">New password</label><input id="pwNew" type="password" autocomplete="new-password" minlength="8" required></div>
       <p class="small muted">At least 8 characters.</p><div class="row"><button class="btn primary">Change password</button></div><p class="msg" id="pwMsg" role="status"></p></form></section>
     <section class="panel"><h3>Your progress</h3>
-      <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b><span>sessions done</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.choice !== undefined).length}</b><span>quizzes answered</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b><span>notes written</span></div></div>
+      <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b> <span>sessions done</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.choice !== undefined).length}</b> <span>quizzes answered</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b> <span>notes written</span></div></div>
       <p class="muted small">Starting over clears your quiz answers, notes and completed sessions.</p>
       <div class="row"><button class="btn danger" id="resetBtn">Start over</button></div><p class="msg" id="resetMsg" role="status"></p>
       <h3 style="margin-top:8px">Sign out</h3><div class="row"><button class="btn" id="logoutBtn">Sign out</button><a class="btn" href="/login?switch=1">Switch account</a></div></section>
@@ -370,7 +370,7 @@ function planTab(l) {
   return `<section class="sec"><div class="eyebrow">Purpose</div><p class="lead">${esc(l.intro)}</p>
     <h4>By the end, participants can</h4><ul class="list">${l.outcomes.map(o => `<li>${esc(o)}</li>`).join('')}</ul></section>
   <section class="sec"><div class="eyebrow">The model</div><h3>${esc(l.model.join(' → '))}</h3>
-    <div class="flow">${l.model.map((m, i) => `<div><b>${pad(i + 1)}</b><span>${esc(m)}</span></div>`).join('')}</div></section>
+    <div class="flow">${l.model.map((m, i) => `<div><b>${pad(i + 1)}</b> <span>${esc(m)}</span></div>`).join('')}</div></section>
   <section class="sec"><div class="eyebrow">Suggested timings · ${l.minutes} min</div>
     <div class="steps timing">${timing(l).map(r => `<div class="step"><span class="t">+${pad(r.at)} min</span><span>${esc(r.label)}</span><small>${r.min} min</small></div>`).join('')}</div></section>
   <section class="sec"><div class="eyebrow">Class presentation · ${deckOf(l).length} slides · ${checksIn(l)} quick checks</div>
@@ -378,7 +378,7 @@ function planTab(l) {
   <section class="sec"><div class="eyebrow">Group practice</div><h3>${esc(l.activity)}</h3>
     <div class="steps">${l.instructions.map((s, i) => `<div class="step"><span class="n">${i + 1}</span><span>${esc(s)}</span></div>`).join('')}</div></section>
   <section class="sec"><div class="eyebrow">Decision check</div><p class="lead">${esc(l.scenario)}</p>
-    <div class="note"><b>Strongest answer: ${LETTERS[l.correct]}</b>${esc(l.choices[l.correct])} ${esc(l.reason)}</div>
+    <div class="note"><b>Strongest answer: ${LETTERS[l.correct]}</b> ${esc(l.choices[l.correct])} ${esc(l.reason)}</div>
     <div class="eyebrow" style="margin-top:4px">Reflection prompt</div><p>${esc(l.prompt)}</p></section>
   <div class="row no-print"><button class="btn primary" data-present="${l.id}">Present the class</button><button class="btn" data-print>Print the plan</button></div>
   ${pager(l)}`;
@@ -400,17 +400,17 @@ function slideHTML(l, { i, picks = {}, notes = false, still = false }) {
     case 'cover': return wrap('cover', `<div class="body"><div class="kick">Phase ${phaseNo(l)} · ${esc(phaseOf(l).name)} · Session ${l.n}</div><h3>${esc(l.title)}</h3><p class="lede">${esc(l.intro)}</p></div><div class="wave"></div>`);
     case 'section': return wrap('cover section', `<div class="body"><div class="kick">${esc(s.k)}</div><h3>${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div><div class="wave"></div>`);
     case 'statement': return wrap('statement', `${kick}<div class="body"><h3 class="big">${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div>`);
-    case 'points': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + (s.from || 1))}</span>${esc(t)}</li>`).join('')}</ul></div>`);
-    case 'cards': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cards">${s.items.map(([h, p]) => `<div><b>${esc(h)}</b><span>${esc(p)}</span></div>`).join('')}</div></div>`);
-    case 'flow': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-flow">${s.items.map(([h, p], j) => `<div><b>Step ${j + 1}</b><span>${esc(h)}</span><p>${esc(p)}</p></div>`).join('')}</div></div>`);
-    case 'compare': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cmp">${[s.a, s.b].map(([h, items], j) => `<div class="${j ? 'yes' : 'no'}"><b>${esc(h)}</b><ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div></div>`);
+    case 'points': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + (s.from || 1))}</span> ${esc(t)}</li>`).join('')}</ul></div>`);
+    case 'cards': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cards">${s.items.map(([h, p]) => `<div><b>${esc(h)}</b> <span>${esc(p)}</span></div>`).join('')}</div></div>`);
+    case 'flow': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-flow">${s.items.map(([h, p], j) => `<div><b>Step ${j + 1}</b> <span>${esc(h)}</span><p>${esc(p)}</p></div>`).join('')}</div></div>`);
+    case 'compare': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="s-cmp">${[s.a, s.b].map(([h, items], j) => `<div class="${j ? 'yes' : 'no'}"><b>${esc(h)}</b> <ul>${items.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>`).join('')}</div></div>`);
     case 'discuss': return wrap('discuss', `${kick}<div class="body"><div class="badge">Discuss</div><h3 class="big">${esc(s.h)}</h3>${s.p ? `<p class="lede">${esc(s.p)}</p>` : ''}</div>`);
-    case 'scenario': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="qbox"><p>${esc(s.p)}</p></div>${s.items ? `<ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + 1)}</span>${esc(t)}</li>`).join('')}</ul>` : ''}</div>`);
+    case 'scenario': return wrap('', `${kick}<h3>${esc(s.h)}</h3><div class="body"><div class="qbox"><p>${esc(s.p)}</p></div>${s.items ? `<ul class="s-list">${s.items.map((t, j) => `<li><span>${pad(j + 1)}</span> ${esc(t)}</li>`).join('')}</ul>` : ''}</div>`);
     case 'check': {
       const pick = picks[i];
       const opts = s.o.map((c, j) => {
         const cls = pick === undefined ? '' : j === s.a ? 'right' : j === pick ? 'wrong' : 'dim';
-        return `<button class="qk-b ${cls}" ${still ? 'tabindex="-1"' : `data-qk="${j}"`} ${pick !== undefined || still ? 'disabled' : ''}><span>${LETTERS[j]}</span>${esc(c)}</button>`;
+        return `<button class="qk-b ${cls}" ${still ? 'tabindex="-1"' : `data-qk="${j}"`} ${pick !== undefined || still ? 'disabled' : ''}><span>${LETTERS[j]}</span> ${esc(c)}</button>`;
       }).join('');
       const after = pick === undefined ? '' : `<div class="kid" aria-live="polite"><div class="kid-h">${pick === s.a ? 'Strong response' : `The stronger answer is ${LETTERS[s.a]}`}</div>${esc(s.why)}</div>`;
       return wrap('', `<h3>What would you do?</h3><div class="body"><div class="qbox"><div class="kick">Quick check</div><p>${esc(s.q)}</p></div><div class="qk">${opts}</div></div>${after}`);
@@ -433,7 +433,7 @@ function classTab(l) {
   if (L.mode === 'presenter') return presenterHTML(l);
   const d = deckOf(l);
   return `<div class="stage-wrap" id="stageWrap">
-    <div class="thumbs" role="tablist" aria-label="Slides">${d.map((s, i) => `<button class="${i === L.slide ? 'on' : ''}" data-slide="${i}" aria-selected="${i === L.slide}"><b>${pad(i + 1)}</b>${esc(thumbLabel(l, s))}</button>`).join('')}</div>
+    <div class="thumbs" role="tablist" aria-label="Slides">${d.map((s, i) => `<button class="${i === L.slide ? 'on' : ''}" data-slide="${i}" aria-selected="${i === L.slide}"><b>${pad(i + 1)}</b> ${esc(thumbLabel(l, s))}</button>`).join('')}</div>
     ${slideHTML(l, { i: L.slide, picks: L.picks, notes: L.mode === 'normal' || L.notes })}
     ${deckBar(l)}
     <p class="small muted hint">← → move between slides · F full screen · P presenter view</p></div>`;
@@ -452,7 +452,7 @@ function paceText(l) {
 function presenterHTML(l) {
   const d = deckOf(l), s = d[L.slide], next = d[L.slide + 1], pace = paceText(l);
   const opt = s.t === 'check' ? s.o[s.a] : '', stop = /[.!?”"]$/.test(opt) ? '' : '.';
-  const answer = s.t === 'check' ? `<div class="note ans"><b>Answer: ${LETTERS[s.a]}</b>${esc(opt)}${stop} ${esc(s.why)}</div>` : '';
+  const answer = s.t === 'check' ? `<div class="note ans"><b>Answer: ${LETTERS[s.a]}</b> ${esc(opt)}${stop} ${esc(s.why)}</div>` : '';
   return `<div class="pv">
     <div class="pv-top"><div class="ttl"><div class="k">Presenter view · Session ${l.n}</div><b>${esc(l.title)}</b></div>
       <div class="pv-clock"><b id="pvClock">${fmt(elapsed())}</b><small>of ${l.minutes}:00</small><button class="btn sm" id="pvRun">${L.clock.run ? 'Pause' : 'Start'}</button><button class="btn sm" id="pvReset">Reset</button></div>
@@ -584,7 +584,7 @@ function quizTab(l) {
       return `<button class="opt ${cls}" data-choice="${i}" aria-pressed="${pick === i}" ${pick !== undefined ? 'disabled' : ''}><span class="dot">${LETTERS[i]}</span><span>${esc(c)}</span></button>`;
     }).join('')}</div>
     <div aria-live="polite">${pick === undefined ? '<p class="small muted">Choose the response you think is strongest. Your answer saves to your account.</p>'
-      : `<div class="result ${pick === l.correct ? 'pass' : 'fail'}"><b>${pick === l.correct ? 'Strong response' : `Consider ${LETTERS[l.correct]} instead`}</b>${esc(l.reason)}</div>
+      : `<div class="result ${pick === l.correct ? 'pass' : 'fail'}"><b>${pick === l.correct ? 'Strong response' : `Consider ${LETTERS[l.correct]} instead`}</b> ${esc(l.reason)}</div>
          <div class="row" style="margin-top:12px"><button class="btn" id="retry">Try again</button><button class="btn primary" data-open="${l.id}/notes">Go to notes</button></div>`}</div></section>
   ${pager(l)}`;
 }
