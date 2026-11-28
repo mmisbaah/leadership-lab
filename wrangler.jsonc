@@ -10,7 +10,7 @@
   ],
   // People, classes, attendance, progress and certificates (schema in migrations/). Replace database_id with the id
   // printed by: npx wrangler d1 create leadership-lab
-  "d1_databases": [{ "binding": "DB", "database_name": "leadership-lab", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "leadership-lab", "database_id": "6824d8cf-ebe2-4b1d-9b76-a88c6dabaf1e", "migrations_dir": "migrations" }],
   // Sessions a participant needs marked present before the server issues a certificate (default: all 12).
   "vars": { "CERT_MIN_SESSIONS": "12" },
   "durable_objects": { "bindings": [{ "name": "POLLS", "class_name": "PollRoom" }] },

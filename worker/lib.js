@@ -23,8 +23,9 @@ export const randomPassword = (n = 10) => Array.from(crypto.getRandomValues(new 
 export const INDEX_SCRIPT_HASH = "'sha256-NcUissmvTykr0+IHawT1CqhwzLD+5JXHEDS5wg+cUYk='";
 // Inline style attributes (slide colours, bar widths) need style 'unsafe-inline'; scripts never do.
 export const CSP = [
-  "default-src 'self'", `script-src 'self' ${INDEX_SCRIPT_HASH}`, "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:",
-  "font-src 'self'", "connect-src 'self'", "manifest-src 'self'", "worker-src 'self'", "frame-ancestors 'none'",
+  // Cloudflare Web Analytics (enabled on the zone) injects its cookieless beacon; it is the only third-party script allowed.
+  "default-src 'self'", `script-src 'self' ${INDEX_SCRIPT_HASH} https://static.cloudflareinsights.com`, "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:",
+  "font-src 'self'", "connect-src 'self' https://cloudflareinsights.com", "manifest-src 'self'", "worker-src 'self'", "frame-ancestors 'none'",
   "base-uri 'self'", "form-action 'self'", "object-src 'none'",
 ].join('; ');
 export const SECURITY = {
