@@ -801,3 +801,15 @@ table.att th[scope="row"] { font-weight: 600; text-transform: none; letter-spaci
 .danger-zone { border-color: var(--bad) !important; }
 details summary { cursor: pointer; font-weight: 600; margin: 8px 0; }
 @media print { .cert-verify { color: #333; } }
+
+/* ── Dhivehi: Thaana font and right-to-left layout. Course slides stay left to right until their text is translated. ── */
+html[lang="dv"] { --f-body: "Noto Sans Thaana", "Faruma", "MV Faseyha", "MV Boli", "IBM Plex Sans", sans-serif; }
+html[lang="dv"] body { line-height: 1.8; }
+html[dir="rtl"] .rail { left: auto; right: 0; }
+html[dir="rtl"] main { margin-left: 0; margin-right: var(--rail-w); }
+@media (max-width: 860px) { html[dir="rtl"] main { margin-right: 0; } }
+html[dir="rtl"] .page-head, html[dir="rtl"] .panel, html[dir="rtl"] th, html[dir="rtl"] td { text-align: right; }
+html[dir="rtl"] .lesson-head .x, html[dir="rtl"] .live-opt em { margin-left: 0; margin-right: auto; }
+html[dir="rtl"] .canvas, html[dir="rtl"] .frame, html[dir="rtl"] .mono, html[dir="rtl"] code { direction: ltr; }
+html.rtl-content[dir="rtl"] .canvas { direction: rtl; }
+.loc-note { background: var(--brass-soft); color: var(--ink); border-radius: 8px; padding: 8px 12px; font-size: .85rem; margin-bottom: 14px; }

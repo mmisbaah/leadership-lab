@@ -5,6 +5,11 @@ import { icon } from './icons.js';
 import { photos } from './photos.js';
 import { qrSVG } from './qr.js';
 import { STATEMENTS, SCALE, EVALUATION } from './assessment.js';
+import { t, LOCALES, locale, setLocale, applyLocale, localiseContent, coverage } from './i18n/index.js';
+
+// Locale first: reviewed translations replace the English course text before anything renders.
+applyLocale();
+localiseContent(lessons, decks, STATEMENTS);
 
 // ---------- constants ----------
 const CACHE_KEY = 'leadership-lab-v2';
@@ -89,14 +94,14 @@ document.addEventListener('click', e => { if (e.target.closest('[data-theme-togg
 
 // ---------- shell ----------
 function shell() {
-  const items = [['home', 'Home'], ['live', 'Live poll'], ['sessions', 'Sessions', lessons.length], ['plan', 'Course plan'], ['reference', 'Reference'], ['review', 'Review quiz'], ['action', 'Action plan'], ['checkin', 'Check-in'], ['help', 'Help'], ['account', 'Account']];
-  if (me?.facilitator) items.push(['team', 'Participants']);
+  const items = [['home'], ['live'], ['sessions', lessons.length], ['plan'], ['reference'], ['review'], ['action'], ['checkin'], ['help'], ['account']].map(([id, n]) => [id, t('nav.' + id), n]);
+  if (me?.facilitator) items.push(['team', t('nav.team')]);
   $('#nav').innerHTML = items.map(([id, label, n]) => `<button class="${page === id ? 'on' : ''}" data-go="${id}" ${page === id ? 'aria-current="page"' : ''}>${label}${n ? `<span class="count">${n}</span>` : ''}</button>`).join('');
-  $('#tabs').innerHTML = [['home', 'Home'], ['live', 'Live'], ['sessions', 'Sessions'], ['plan', 'Plan'], ['account', 'Account']]
+  $('#tabs').innerHTML = ['home', 'live', 'sessions', 'plan', 'account'].map(id => [id, t('tabs.' + id)])
     .map(([id, label]) => `<button class="${page === id ? 'on' : ''}" data-go="${id}">${label}</button>`).join('');
   const nx = nextLesson();
-  $('#railFoot').innerHTML = `<div class="role">Working on</div><div>${doneCount() === lessons.length ? 'All sessions complete' : `Session ${nx.n} · ${esc(phaseOf(nx).name)}`}</div>
-    <div style="margin-top:8px">${me ? `Signed in as <span class="who">${esc(me.name)}</span>` : 'Connecting…'}</div>
+  $('#railFoot').innerHTML = `<div class="role">${t('rail.working')}</div><div>${doneCount() === lessons.length ? t('rail.allDone') : esc(t('rail.session', { n: nx.n, phase: phaseOf(nx).name }))}</div>
+    <div style="margin-top:8px">${me ? `${t('rail.signedIn')} <span class="who">${esc(me.name)}</span>` : t('rail.connecting')}</div>
     <div class="sync" data-sync>${esc(syncText)}</div>
     <button class="theme-btn" data-theme-toggle type="button">${isDark() ? 'Light theme' : 'Dark theme'}</button>`;
   $$('.topbar [data-theme-toggle]').forEach(b => { b.textContent = isDark() ? 'Light theme' : 'Dark theme'; });
@@ -138,6 +143,7 @@ function route() {
 
 function renderPage() {
   shell();
+  if (locale() !== 'en' && coverage() < 1 && !$('#locNote')) { const n = document.createElement('p'); n.id = 'locNote'; n.className = 'loc-note'; n.setAttribute('role', 'status'); n.textContent = t('locale.pending'); document.querySelector('main').prepend(n); }
   liveBanner();
   const v = $('#view');
   if (page === 'sessions') v.innerHTML = sessionsHTML();
@@ -288,7 +294,7 @@ function helpHTML() {
 // The voting card for phones. It checks every two seconds for the poll the facilitator has open.
 let liveLoop = null, liveData = null;
 function liveHTML() {
-  return `<div class="page-head"><div class="eyebrow">Live poll</div><h1>Vote</h1><p>When your facilitator shows a question to the room, it appears here. Your answer is counted once; you can change it until voting closes.</p></div>
+  return `<div class="page-head"><div class="eyebrow">${t('live.eyebrow')}</div><h1>${t('live.title')}</h1><p>${t('live.intro')}</p></div>
   <section class="panel live-card" id="liveCard" aria-live="polite"><p class="muted">Connecting…</p></section>`;
 }
 function renderLiveCard() {
@@ -298,7 +304,7 @@ function renderLiveCard() {
   const key = JSON.stringify(liveData || null);
   if (box.dataset.key === key || (box.contains(document.activeElement) && document.activeElement.matches('textarea'))) return;
   box.dataset.key = key;
-  if (!a) { box.innerHTML = `<div class="live-wait">${icon('radio', 'ic')}<div><b>No question is open right now.</b><p class="muted small">Keep this page open. The next question appears here automatically.</p></div></div>`; return; }
+  if (!a) { box.innerHTML = `<div class="live-wait">${icon('radio', 'ic')}<div><b>${t('live.none')}</b><p class="muted small">${t('live.keepOpen')}</p></div></div>`; return; }
   const mine = liveData.myVote, res = liveData.results, total = res?.total || 0;
   if (a.kind === 'open') {
     box.innerHTML = `<div class="eyebrow">${a.locked ? 'Answers closed' : 'Open now · type a short answer'}</div><h2 class="live-q">${esc(a.q)}</h2>
@@ -360,7 +366,9 @@ function accountHTML() {
       <div class="row"><button class="btn danger" id="resetBtn">Start over</button></div><p class="msg" id="resetMsg" role="status"></p>
       <h3 style="margin-top:8px">After the course</h3><div class="row"><a class="btn" href="#action">Action plan</a><a class="btn" href="#checkin">30-day check-in</a><a class="btn" href="#review">Review quiz</a><a class="btn" href="#assess">Self-assessment</a><a class="btn" href="#evaluate">Course evaluation</a><a class="btn ${certReady() ? 'primary' : ''}" href="#certificate">Certificate</a></div>
       <p class="small muted">Your certificate is issued once your facilitator has marked ${me?.threshold || lessons.length} sessions present (${doneCount()} so far).</p>
-      <h3 style="margin-top:8px">Privacy</h3><div class="row"><a class="btn" href="#privacy">My data and privacy</a></div>
+      <h3 style="margin-top:8px">${t('account.privacy')}</h3><div class="row"><a class="btn" href="#privacy">My data and privacy</a></div>
+      <h3 style="margin-top:8px">${t('account.language')}</h3><div class="field"><label for="locSel" class="sr">${t('account.language')}</label><select id="locSel">${Object.entries(LOCALES).map(([k, v]) => `<option value="${k}" lang="${k}" ${k === locale() ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></div>
+      <p class="small muted">${t('account.languageHint')}</p>
       <h3 style="margin-top:8px">Presenting</h3><label class="check"><input type="checkbox" id="confOpt" ${celebrate() ? 'checked' : ''}> Confetti for correct quick-check answers</label>
       <p class="small muted">Off by default: correct answers get a quiet green highlight. Also switchable in presenter view.</p>
       <h3 style="margin-top:8px">Sign out</h3><div class="row"><button class="btn" id="logoutBtn">Sign out</button><a class="btn" href="/login?switch=1">Switch account</a></div></section>
@@ -378,6 +386,7 @@ function bindAccount() {
     try { await call('/api/progress', { reset: true }); saved = {}; cache(); renderPage(); toast('Progress cleared'); }
     catch (err) { $('#resetMsg').className = 'msg bad'; $('#resetMsg').textContent = err.message; }
   };
+  $('#locSel').onchange = e => { setLocale(e.target.value); location.reload(); };
   $('#confOpt').onchange = e => { try { localStorage.setItem('ll-confetti', e.target.checked ? 'on' : 'off'); } catch {} };
   $('#logoutBtn').onclick = async () => {
     await fetch('/logout', { method: 'POST' });

@@ -20,7 +20,7 @@ export const randomPassword = (n = 10) => Array.from(crypto.getRandomValues(new 
 // ---------- security headers ----------
 // The app's only inline script is the theme bootstrap in public/index.html; it is allowed by hash, not by
 // 'unsafe-inline'. tests/content.test.mjs fails if the script changes without this hash being updated.
-export const INDEX_SCRIPT_HASH = "'sha256-i40WxYyvg/cZgDXRxXCn/kbBFKn8WHoAjVgmTLCFCUE='";
+export const INDEX_SCRIPT_HASH = "'sha256-NcUissmvTykr0+IHawT1CqhwzLD+5JXHEDS5wg+cUYk='";
 // Inline style attributes (slide colours, bar widths) need style 'unsafe-inline'; scripts never do.
 export const CSP = [
   "default-src 'self'", `script-src 'self' ${INDEX_SCRIPT_HASH}`, "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:",

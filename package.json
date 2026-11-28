@@ -11,7 +11,13 @@
     "test:content": "node --test tests/content.test.mjs",
     "export-content": "node scripts/export-content.mjs",
     "restore-backup": "node scripts/restore-backup.mjs",
-    "create-admin": "node scripts/create-admin.mjs"
+    "create-admin": "node scripts/create-admin.mjs",
+    "generate-backup-key": "node scripts/generate-backup-key.mjs",
+    "apply-photos": "node scripts/apply-photos.mjs",
+    "migrate-kv-to-d1": "node scripts/migrate-kv-to-d1.js",
+    "i18n-check": "node scripts/i18n-check.mjs",
+    "db:migrate": "wrangler d1 migrations apply leadership-lab --remote",
+    "db:migrate:local": "wrangler d1 migrations apply leadership-lab --local"
   },
   "devDependencies": {
     "axe-core": "4.14.1",

@@ -5,6 +5,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { lessons, totalMinutes } from '../public/lessons.js';
 import { decks } from '../public/decks.js';
+import { STATEMENTS, SCALE, EVALUATION, MIN_GROUP } from '../public/assessment.js';
 
 const out = resolve(process.argv[2] || 'docs/content-review.md');
 const LETTERS = 'ABCDEFGH';
@@ -26,7 +27,7 @@ function texts(v, acc = []) {
 const L = [];
 L.push('# Leadership Lab: course content for review', '');
 L.push(`Generated ${new Date().toISOString().slice(0, 10)} by \`npm run export-content\`. ${lessons.length} sessions, ${Object.values(decks).filter((d, i) => lessons[i]).length ? lessons.reduce((n, l) => n + (decks[l.id]?.length || 0), 0) : 0} slides, ${Math.floor(totalMinutes / 60)} h ${totalMinutes % 60} min of teaching.`, '');
-L.push('For each session: the facilitator plan, the decision quiz (the strongest answer is marked ✔), the private-notes prompt, and every slide with its speaker notes. Edit the source in `public/lessons.js` and `public/decks.js`, not this file.', '');
+L.push('For each session: the facilitator plan, the decision quiz (the strongest answer is marked ✔, with its rationale), the private-notes prompt, and every slide with its speaker notes, planned timer and live-poll type. The ten self-assessment statements and the evaluation questions are at the end. Edit the source in `public/lessons.js` and `public/decks.js`, not this file.', '');
 L.push('## Contents', '', ...lessons.map(l => `- [Session ${l.n}: ${l.title}](#session-${l.n}-${l.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '')})`), '');
 
 for (const l of lessons) {
@@ -45,12 +46,16 @@ for (const l of lessons) {
     const body = Object.entries(s).filter(([k]) => !LAYOUT.has(k) || (k === 'a' && s.t !== 'check')).flatMap(([, v]) => texts(v));
     if (body.length) L.push(...body.map(x => `- ${x}`), '');
     if (s.t === 'check') L.push(...(s.h ? [clean(s.q), ''] : []), ...s.o.map((o, j) => `- ${LETTERS[j]}. ${clean(o)}${j === s.a ? ' ✔' : ''}`), '', `*Why:* ${clean(s.why || '')}`, '');
+    if (s.min) L.push(`*Timer:* ${s.min} minute${s.min === 1 ? '' : 's'} (planned; facilitators can change it per class)`, '');
     if (s.poll || s.pq) L.push(`*Live poll:* ${clean(s.pq || s.q || s.h)}`, '');
+    if (s.open) L.push('*Open-text live poll:* participants type a short answer, shown as a word cloud or list.', '');
     if (s.photo) L.push(`*Photo:* ${s.photo.src ? s.photo.src : 'not yet supplied'} — ${clean(s.photo.subject || '')} (alt: ${clean(s.photo.alt || '')})`, '');
     if (s.src) L.push(`*Source:* ${clean(s.src)}`, '');
     if (s.n) L.push(`> **Speaker notes:** ${clean(s.n)}`, '');
   });
 }
+L.push('---', '', '## Self-assessment (before and after)', '', `Rated 1 (${SCALE[0]}) to 5 (${SCALE[4]}) at Session 01 and again at the 30-day check-in. Facilitators see class averages only, when at least ${MIN_GROUP} people answered.`, '', ...STATEMENTS.map((x, i) => `${i + 1}. ${x.text}`), '');
+L.push('## Anonymous course evaluation', '', ...Object.values(EVALUATION).map(e => `- ${e.q}${e.scale ? ` (${e.scale.join(' / ')})` : ' (free text)'}`), '');
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, L.join('\n'));
 console.log(`Wrote ${out} (${L.length} lines)`);

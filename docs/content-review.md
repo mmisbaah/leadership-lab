@@ -1,8 +1,8 @@
 # Leadership Lab: course content for review
 
-Generated 2026-11-27 by `npm run export-content`. 12 sessions, 326 slides, 7 h 10 min of teaching.
+Generated 2026-11-28 by `npm run export-content`. 12 sessions, 326 slides, 7 h 10 min of teaching.
 
-For each session: the facilitator plan, the decision quiz (the strongest answer is marked ✔), the private-notes prompt, and every slide with its speaker notes. Edit the source in `public/lessons.js` and `public/decks.js`, not this file.
+For each session: the facilitator plan, the decision quiz (the strongest answer is marked ✔, with its rationale), the private-notes prompt, and every slide with its speaker notes, planned timer and live-poll type. The ten self-assessment statements and the evaluation questions are at the end. Edit the source in `public/lessons.js` and `public/decks.js`, not this file.
 
 ## Contents
 
@@ -88,6 +88,8 @@ A capable team member makes an error in front of others. What is the strongest f
 *Opening question*
 
 Two minutes in pairs. Talk about behaviours you saw, not personality.
+
+*Timer:* 2 minutes (planned; facilitators can change it per class)
 
 *Live poll:* What did the best leader you worked with do?
 
@@ -249,6 +251,8 @@ Which behaviours does a new leader need most?
 - Rank them; defend the top two
 - Debrief: values in daily decisions
 
+*Timer:* 20 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief. | Full wording from the earlier slide: On-screen points: Form teams of four to six.; Select five behaviours a new leader needs most.; Rank them and defend the top two with a workplace example.; Debrief how values become visible in daily decisions.
 
 #### 20. Possible behaviours for the kit · Cards
@@ -269,6 +273,10 @@ Which behaviours does a new leader need most?
 *Debrief*
 
 Share one workplace example for each. Where did your group disagree?
+
+*Timer:* 7 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Take one answer per group. Look for overlap between groups and point it out. Ask where values became visible in an everyday decision.
 
@@ -397,6 +405,8 @@ Your team meets every deadline, but two experienced members have asked to transf
 *Opening question*
 
 Two minutes in pairs.
+
+*Timer:* 2 minutes (planned; facilitators can change it per class)
 
 *Live poll:* The job got done but the team fell apart. What went wrong?
 
@@ -597,6 +607,8 @@ Your team must move an entire office between Friday evening and Monday morning w
 - Find the neglected circle and its effects
 - Write the next three actions; share
 
+*Timer:* 16 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief. | Full wording from the earlier slide: On-screen points: Give each group a short case about a team that is struggling.; Map what the leader is doing for the task, the team and the individuals.; Identify the neglected area and its knock-on effects on the other two.; Use the check sheet to write the leader’s next three actions, then share them.
 
 #### 22. Which circle was neglected in your case, and how did it affect the other two? · Discussion
@@ -604,6 +616,10 @@ Your team must move an entire office between Friday evening and Monday morning w
 *Debrief*
 
 Share your three actions from the check sheet.
+
+*Timer:* 6 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Take one answer per group. Push for specific actions, not slogans like “improve morale”.
 
@@ -732,6 +748,8 @@ Your manager announces a decision in a team meeting that you think is a mistake.
 *Opening question*
 
 List as many reasons as you can in one minute.
+
+*Timer:* 1 minute (planned; facilitators can change it per class)
 
 *Live poll:* Why do people follow a leader?
 
@@ -923,6 +941,8 @@ What would a good follower do?
 - Script what a good follower says
 - Share one case; discuss conflicting rules
 
+*Timer:* 13 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief. | Full wording from the earlier slide: On-screen points: Give each group three short cases where a team member must choose how to act.; For each case, name the rule or rules that apply.; Agree what a good follower would say and do, word for word.; Share one case with the room and discuss where rules pull in different directions.
 
 #### 23. Cases to work through · Cards
@@ -941,6 +961,10 @@ What would a good follower do?
 *Debrief*
 
 Read out what your good follower would actually say.
+
+*Timer:* 5 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Hearing the exact words helps. Praise phrasing that is respectful and specific.
 
@@ -1058,6 +1082,8 @@ You explain a new task and a colleague says “understood.” What should you do
 *Opening question*
 
 One example each, in pairs. What was said, and what was heard?
+
+*Timer:* 3 minutes (planned; facilitators can change it per class)
 
 *Live poll:* Think of an instruction that went wrong. What caused it most?
 
@@ -1220,6 +1246,8 @@ Describe it so someone else can build it.
 - The listener builds or sketches, asking clarifying questions.
 - Compare results and debrief where assumptions entered.
 
+*Timer:* 15 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief.
 
 #### 20. How the round works · Cards
@@ -1238,6 +1266,10 @@ Describe it so someone else can build it.
 *Debrief*
 
 What helped most: the description, or the questions? What would you do differently at work?
+
+*Timer:* 7 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Look for the moment results improved when the listener asked more. Link back to step 2: questions do much of the work.
 
@@ -1366,6 +1398,8 @@ A junior employee flags a risk just before the team commits. What is the best re
 *Opening question*
 
 You do not need to share details. Just the reason.
+
+*Timer:* 2 minutes (planned; facilitators can change it per class)
 
 *Live poll:* What usually stops people speaking up?
 
@@ -1541,6 +1575,8 @@ A decision where the key facts are spread across the group.
 - Draw out quieter members
 - Revisit: what changed?
 
+*Timer:* 10 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief. | Full wording from the earlier slide: On-screen points: Give each group a situation with key facts split across members.; Have them propose an initial decision before all facts are shared.; Invite quieter members to contribute missing information.; Revisit the decision and identify what changed.
 
 #### 21. How the challenge runs · Cards
@@ -1559,6 +1595,10 @@ A decision where the key facts are spread across the group.
 *Debrief*
 
 Whose information was missing at first, and why did it stay hidden?
+
+*Timer:* 4 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Usually the critical fact came from the quietest person. Make that link explicitly to their workplace.
 
@@ -1687,6 +1727,8 @@ A team member has missed two agreed deadlines. Which opening is strongest?
 *Opening question*
 
 What made it useful: the content, the timing, or the way it was said?
+
+*Timer:* 2 minutes (planned; facilitators can change it per class)
 
 *Live poll:* What made the most useful feedback useful?
 
@@ -1849,6 +1891,8 @@ Speaker, colleague and observer.
 - Run a five-minute private conversation.
 - Observer gives specific feedback; rotate roles.
 
+*Timer:* 10 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief.
 
 #### 20. What each person does · Cards
@@ -1867,6 +1911,10 @@ Speaker, colleague and observer.
 *Debrief*
 
 What did the observer notice that the speaker missed?
+
+*Timer:* 4 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Common answers: staying with observations, pausing after impact. Celebrate good examples you heard.
 
@@ -1995,6 +2043,8 @@ A new project team has a clear goal, but members keep duplicating work and missi
 *Opening question*
 
 At work, in sport, anywhere. One or two things.
+
+*Timer:* 2 minutes (planned; facilitators can change it per class)
 
 *Live poll:* What made your best team work?
 
@@ -2174,6 +2224,8 @@ Ten minutes. Simple materials. The tallest tower wins.
 - Observers note leading, left-out, deciding
 - Debrief against successful-team traits
 
+*Timer:* 13 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief. | Full wording from the earlier slide: On-screen points: Give each team the same simple materials (paper, tape, string) and ten minutes.; Build the tallest free-standing tower; it must stand for ten seconds.; One observer per team notes who led, who was left out and how decisions were made.; Debrief with the observer notes and the characteristics of a successful team.
 
 #### 21. What observers watch for · Cards
@@ -2192,6 +2244,10 @@ Ten minutes. Simple materials. The tallest tower wins.
 *Debrief*
 
 Observers go first.
+
+*Timer:* 5 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Let observers report before builders defend themselves. Link what happened to the six characteristics and the three steps.
 
@@ -2320,6 +2376,8 @@ You delegate a project to a capable colleague. What should you clarify first?
 *Opening question*
 
 And what stops you handing it over?
+
+*Timer:* 2 minutes (planned; facilitators can change it per class)
 
 *Live poll:* What stops you handing a task over?
 
@@ -2484,6 +2542,8 @@ Too many tasks, too few people, and a surprise.
 - Reveal a new constraint halfway through.
 - Reallocate work and debrief how accountability changed.
 
+*Timer:* 17 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief.
 
 #### 20. Your plan must show · Cards
@@ -2502,6 +2562,10 @@ Too many tasks, too few people, and a surprise.
 *Debrief*
 
 Was it clear who owned what? What would you set up differently from the start?
+
+*Timer:* 6 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Teams with clear owners and checkpoints usually adapt faster. Make that link.
 
@@ -2630,6 +2694,8 @@ An engaged employee struggles with a new technical task. What is the first respo
 *Opening question*
 
 Shout out the first explanation that comes to mind.
+
+*Timer:* 1 minute (planned; facilitators can change it per class)
 
 *Live poll:* When someone underperforms, what do people usually assume?
 
@@ -2793,6 +2859,8 @@ Same team, four different situations.
 - Choose a distinct leader response for each case.
 - Compare decisions and revise assumptions.
 
+*Timer:* 9 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief.
 
 #### 20. Your group decides · Cards
@@ -2811,6 +2879,10 @@ Same team, four different situations.
 *Debrief*
 
 What assumption did you have to revise?
+
+*Timer:* 4 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Compare answers across groups. Differences show how easy it is to misread a situation.
 
@@ -2939,6 +3011,8 @@ Two colleagues strongly disagree on a response plan. What should the leader do?
 *Opening question*
 
 Think of a recent one. What made it difficult?
+
+*Timer:* 2 minutes (planned; facilitators can change it per class)
 
 *Live poll:* What makes a work decision hardest?
 
@@ -3105,6 +3179,8 @@ Several incidents, limited time, one surprise.
 - Reveal a new fact after the first decision.
 - Reprioritise and explain what changed.
 
+*Timer:* 13 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief.
 
 #### 20. For each incident · Cards
@@ -3123,6 +3199,10 @@ Several incidents, limited time, one surprise.
 *Debrief*
 
 How did your group handle disagreement? Who made the final call?
+
+*Timer:* 5 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Groups without a clear decision owner usually struggle most. Make that point.
 
@@ -3250,6 +3330,8 @@ Your plan is underway when a critical new fact emerges. What do you do?
 *Opening question*
 
 One word or a short phrase.
+
+*Timer:* 1 minute (planned; facilitators can change it per class)
 
 *Live poll:* Which skill will be hardest to use under pressure?
 
@@ -3379,6 +3461,8 @@ Seven minutes to plan. A new constraint. Five minutes to revise.
 - New constraint; five minutes to revise
 - Present; debrief decisions and accountability
 
+*Timer:* 12 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief. | Full wording from the earlier slide: On-screen points: Give each team a workplace disruption with missed work and conflicting views.; Allow seven minutes to agree a response and assign owners.; Reveal a new constraint and allow five minutes to revise.; Present the plan; debrief decisions, communication and accountability.
 
 #### 17. Two rounds and a surprise · Diagram
@@ -3425,6 +3509,10 @@ A key deliverable is two days late. Two team members disagree about the fix. A c
 *Debrief*
 
 What changed when the new constraint arrived?
+
+*Timer:* 4 minutes (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
 
 > **Speaker notes:** Each team presents in two minutes. Then ask the debrief questions. Name specific good moments you observed.
 
@@ -3571,6 +3659,10 @@ Twelve sessions. Two days. What stuck?
 
 One sentence. Write it down.
 
+*Timer:* 1 minute (planned; facilitators can change it per class)
+
+*Open-text live poll:* participants type a short answer, shown as a word cloud or list.
+
 > **Speaker notes:** Thirty seconds of writing. Take two or three answers aloud if time allows.
 
 #### 7. Change happens in small, specific actions, not big intentions. · Statement
@@ -3685,6 +3777,8 @@ Write it, share it, set a review date.
 - Choose your first situation to act
 - Tell a partner your action and review date
 
+*Timer:* 3 minutes (planned; facilitators can change it per class)
+
 > **Speaker notes:** Brief the whole activity before anyone moves. Check that every group knows the task, the time limit and what they will report back. Then circulate and listen for examples you can use in the debrief. | Full wording from the earlier slide: On-screen points: Write one behaviour to stop, one to start and one to continue.; Choose the first workplace situation where you will act.; Tell a partner your action and when you will review it.
 
 #### 18. Fill in each line · Cards
@@ -3704,6 +3798,8 @@ Write it, share it, set a review date.
 *Partner check*
 
 Partner: ask “How will you know you did it?”
+
+*Timer:* 1 minute (planned; facilitators can change it per class)
 
 > **Speaker notes:** One minute each way. Saying a commitment aloud makes it more likely to happen.
 
@@ -3762,3 +3858,27 @@ At my next relevant work situation, I will…
 Thank you for your time and your honesty today.
 
 > **Speaker notes:** Thank the group. Hand out evaluations if you use them. Close on time.
+
+---
+
+## Self-assessment (before and after)
+
+Rated 1 (Rarely) to 5 (Consistently) at Session 01 and again at the 30-day check-in. Facilitators see class averages only, when at least 3 people answered.
+
+1. I give specific feedback within a week of seeing the behaviour.
+2. When I ask for something, I explain why, not just what.
+3. I listen to the end before I answer or decide.
+4. People on my team tell me about problems early, including my own mistakes.
+5. I pay attention to the task, the team and each individual, not just the task.
+6. When I delegate, I agree the outcome, the limits and when we will check in.
+7. I spend time helping each person grow, not only fixing today’s work.
+8. I explain how a decision will be made before we make it.
+9. I deal with disagreement directly and early instead of letting it build.
+10. When I disagree with my own leader, I say so in private, with evidence, then support the decision.
+
+## Anonymous course evaluation
+
+- How relevant was this course to your work? (Not relevant / A little / Somewhat / Very / Extremely)
+- How was the pace? (Much too slow / A bit slow / About right / A bit fast / Much too fast)
+- How effective was the facilitator? (Not effective / A little / Somewhat / Very / Extremely)
+- One thing we should improve (free text)
