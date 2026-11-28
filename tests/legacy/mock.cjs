@@ -1,0 +1,23 @@
+const { chromium } = require('playwright'); const fs = require('fs');
+const S = process.env.S, pw = fs.readFileSync(S + '/pw.txt', 'utf8').trim(), B = 'http://localhost:8799';
+(async () => {
+  const b = await chromium.launch(); const errs = [];
+  const ctx = await b.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 }); const p = await ctx.newPage();
+  p.on('pageerror', e => errs.push(e.message));
+  await p.goto(B + '/'); await p.fill('#login', 'local_test'); await p.fill('#password', pw); await p.click('button[type=submit]'); await p.waitForSelector('.hero');
+  await p.goto(B + '/#mock'); await p.waitForSelector('#stage');
+  await p.keyboard.press('f'); await p.waitForSelector('.lesson.pres'); await p.waitForTimeout(400);
+  const info = async () => p.evaluate(() => { const f = document.querySelector('.frame'), b = f.querySelector('.cv-body'); return { w: f.offsetWidth, h: f.offsetHeight, s: getComputedStyle(f.firstElementChild).getPropertyValue('--s'), over: b.scrollHeight - b.clientHeight, num: f.querySelector('.num').textContent }; });
+  let shot = 0;
+  const snap = async name => { await p.waitForTimeout(450); await p.screenshot({ path: `${S}/mock/${String(++shot).padStart(2, '0')}-${name}.png` }); console.log(name, JSON.stringify(await info())); };
+  await snap('divider');
+  await p.keyboard.press('ArrowRight'); await snap('adair');
+  await p.keyboard.press('ArrowRight'); await snap('reveal-0');
+  await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowRight'); await snap('reveal-2');
+  await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowRight'); await snap('reveal-4');
+  await p.keyboard.press('ArrowRight'); await snap('tuckman');
+  await p.keyboard.press('ArrowRight'); await snap('check');
+  await p.click('[data-qk="0"]'); await snap('check-answered');
+  await p.setViewportSize({ width: 1440, height: 900 }); await p.waitForTimeout(300); await snap('check-16x10-letterbox');
+  console.log('errors:', errs.join(' | ') || 'none'); await b.close();
+})();

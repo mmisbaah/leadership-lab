@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "leadership-lab",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "public", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "single-page-application" },
+  "kv_namespaces": [
+    { "binding": "USERS", "id": "aa77f01558b847edb39d2a1851a71a07" },
+    { "binding": "BACKUPS", "id": "4ed007f54da94de6b61e94f93c922fad" }
+  ],
+  // People, classes, attendance, progress and certificates (schema in migrations/). Replace database_id with the id
+  // printed by: npx wrangler d1 create leadership-lab
+  "d1_databases": [{ "binding": "DB", "database_name": "leadership-lab", "database_id": "6824d8cf-ebe2-4b1d-9b76-a88c6dabaf1e", "migrations_dir": "migrations" }],
+  // Sessions a participant needs marked present before the server issues a certificate (default: all 12).
+  "vars": { "CERT_MIN_SESSIONS": "12" },
+  "durable_objects": { "bindings": [{ "name": "POLLS", "class_name": "PollRoom" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PollRoom"] }],
+  "routes": [{ "pattern": "leadership.mellowpilot.com", "custom_domain": true }],
+  // Nightly backup snapshot and 2-year retention purge (worker/backup.js), 02:17 UTC.
+  "triggers": { "crons": ["17 2 * * *"] },
+  "observability": { "enabled": true }
+}

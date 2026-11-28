@@ -1,0 +1,30 @@
+const { chromium } = require('playwright'); const fs = require('fs');
+const S = process.env.S, pw = fs.readFileSync(S + '/pw.txt', 'utf8').trim(), B = 'http://localhost:8799';
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } }); const p = await ctx.newPage();
+  const errs = []; p.on('pageerror', e => errs.push('presenter: ' + e.message));
+  await p.goto(B + '/'); await p.fill('#login', 'local_test'); await p.fill('#password', pw); await p.click('button[type=submit]'); await p.waitForSelector('.hero');
+  await p.goto(B + '/#s/feedback/class'); await p.waitForSelector('#stage');
+  await p.keyboard.press('p'); await p.waitForSelector('.pv');
+  const [proj] = await Promise.all([ctx.waitForEvent('page'), p.click('#pvOpen')]);
+  proj.on('pageerror', e => errs.push('projector: ' + e.message));
+  await proj.setViewportSize({ width: 1280, height: 720 }); await proj.waitForSelector('.proj .stage'); await p.waitForTimeout(800);
+  const num = pg => pg.$eval('#stage .num', e => e.textContent);
+  console.log('linked:', await p.textContent('#pvLink'));
+  for (let i = 0; i < 9; i++) await p.keyboard.press('ArrowRight');
+  await p.waitForTimeout(300);
+  console.log('after 9x next  presenter', await num(p), '| projector', await num(proj));
+  await p.screenshot({ path: S + '/shots/pv-presenter.png' }); await proj.screenshot({ path: S + '/shots/pv-projector.png' });
+  // answer the quick check on the projector; presenter must follow
+  const isCheck = await proj.$('[data-qk]'); console.log('slide 10 is a check:', !!isCheck);
+  await proj.click('[data-qk="1"]'); await p.waitForTimeout(400);
+  console.log('after answering on projector: presenter right=', await p.$$eval('#stage .qk-b.right', e => e.length), 'score', await p.textContent('.score'), '| projector right=', await proj.$$eval('.qk-b.right', e => e.length));
+  await proj.keyboard.press('ArrowRight'); await p.waitForTimeout(400);
+  console.log('arrow on projector  presenter', await num(p), '| projector', await num(proj));
+  const t1 = await p.textContent('#pvClock'); await p.waitForTimeout(2200); const t2 = await p.textContent('#pvClock');
+  console.log('timer', t1, '->', t2, '| pace:', await p.textContent('#pvPace'), '| notes:', (await p.textContent('.pv-notes')).slice(0, 60) + '…');
+  await p.screenshot({ path: S + '/shots/pv-presenter-2.png' });
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  console.log('Esc leaves presenter:', !(await p.$('.pv')), '| Class tab still open:', !!(await p.$('.thumbs')));
+  console.log('errors:', errs.join(' | ') || 'none'); await b.close();
+})();

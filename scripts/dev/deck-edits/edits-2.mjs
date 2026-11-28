@@ -1,0 +1,47 @@
+// Batch 2: sessions 05–08.
+export default {
+  trust: {
+    3: { h: 'By the end: get people to speak up', items: ['Link trust to speaking up', 'Invite missing information before deciding', 'Respond to mistakes fairly'] },
+    // Positive side on the right so the colours read correctly (right = green).
+    7: { src: 'Amy Edmondson, psychological safety', a: ['It is not', ['Avoiding hard feedback', 'Everyone always agreeing', 'No consequences for poor work', 'Being nice instead of honest']], b: ['It is', ['Raising concerns without ridicule', 'Admitting mistakes early', 'Disagreeing respectfully', 'Asking for help']] },
+    15: { items: ['Decide; don’t wait for everyone to agree', 'Say what input changed your thinking', 'Close the loop with whoever spoke up', 'Review later: were they right?'] },
+    16: { items: ['First: thank them for telling you', 'Then: fix the problem together', 'Later: learn how, not who to blame'] },
+    19: { items: ['Split key facts across each group', 'Decide before all facts are shared', 'Draw out quieter members', 'Revisit: what changed?'] },
+    24: { h: 'Get one more voice heard this week' },
+    25: { h: 'Psychological safety in three lines' },
+  },
+  feedback: {
+    3: { h: 'By the end: say the hard thing so it helps', items: ['Separate observation from judgment', 'Structure corrective feedback clearly', 'Agree support and a checkpoint'] },
+    8: { b: ['Observation', ['“Two recent reports had errors.”', '“You left before the handover.”', '“After 9:15 three times this week.”', '“You interrupted Ali twice today.”']] },
+    10: { o: ['“You are not a team player.”', '“You didn’t answer the client’s three emails.”', '“You seem lazy lately.”'] },
+    12: { src: 'Builds on Situation-Behaviour-Impact, Center for Creative Leadership' },
+    22: { o: ['“You are unreliable and never take this seriously.”', '“I’ll just do the work myself from now on.”', '“Two dates have passed. What happened, and what changes?”'] },
+    24: { h: 'Give better feedback this week' },
+    25: { h: 'Feedback in three lines' },
+  },
+  teamwork: {
+    3: { h: 'By the end: turn a group into a team', items: ['Describe what successful teams have', 'Pick the right way of working', 'Lead each stage of a team'] },
+    6: { p: 'A group shares a space. A team shares a goal and needs each other.' },
+    8: { src: 'Adapted from the course’s Team Building lesson', items: [['Capable leadership', 'Firm, fair and competent'], ['Clear goals', 'A shared sense of direction'], ['Decisions everyone knows', 'Nobody finds out last'], ['Quick action', 'Decisions acted on promptly'], ['Open communication', 'No barriers between people'], ['The right skills', 'What the job needs, and who has it']] },
+    11: { src: 'Adapted from the course’s Team Building lesson', items: [['Separate tasks', 'Each owns a piece. For routine, divisible work.'], ['Coordinated tasks', 'Linked by rules and hand-offs. For processes.'], ['Close collaboration', 'Side by side. For idea-heavy problems.']] },
+    13: { t: 'diagram', d: 'tuckman', items: null, src: 'Bruce Tuckman, 1965',
+      stages: [['Forming', 'Give direction'], ['Storming', 'Manage conflict'], ['Norming', 'Step back, support'], ['Performing', 'Delegate, develop']] },
+    18: { items: ['Goal and roles: one goal, one role map', 'Communication: weekly joint check-in, one channel', 'Review: after month one; celebrate a shared win'] },
+    20: { items: ['Same materials, ten minutes per team', 'Tallest free-standing tower, ten seconds', 'Observers note leading, left-out, deciding', 'Debrief against successful-team traits'] },
+    23: { q: 'A new team has a clear goal but keeps duplicating work and missing hand-offs. What first?', o: ['Agree roles and hand-offs together; make them visible', 'Tell everyone to work harder and communicate more', 'Handle every hand-off yourself'] },
+    25: { h: 'Build your team this week', items: ['Ask everyone the goal; compare answers', 'Make roles and hand-offs visible', 'Start a short weekly check-in', 'Recognise one team win publicly'] },
+    26: { h: 'Team building in three lines', items: ['A team shares a goal and needs each other', 'Fit the way of working to the task', 'Goal and roles, open talk, review together'] },
+  },
+  delegation: {
+    3: { h: 'By the end: hand over ownership, not chores', items: ['Match tasks to capability and growth', 'Set outcome, authority and deadline', 'Check in without micromanaging'] },
+    9: { items: [['Repeat tasks', 'Done many times; someone else can learn'], ['Growth tasks', 'A stretch that builds a needed skill'], ['Expert tasks', 'Someone does it better than you'], ['Keep', 'Confidential, people decisions, crises you own']] },
+    10: { o: ['You find it boring', 'It builds their skill, and you can support them', 'You want to avoid blame if it fails'] },
+    12: { items: [['Outcome and standards', 'What done looks like; what’s good enough'], ['Authority and resources', 'What they decide; what they can use'], ['Checkpoint and support', 'When you check in; how to get help']] },
+    14: { t: 'diagram', d: 'dial', items: null, levels: ['1', '2', '3', '4'],
+      key: [['Level 1', 'Look into it; report back'], ['Level 2', 'Recommend; I decide'], ['Level 3', 'Decide, then tell me'], ['Level 4', 'Decide and act']] },
+    16: { items: ['Outcome: date, budget, everyone, done by 4 pm', 'Authority: level 3 venue and food; level 2 budget', 'Checkpoint: review in a week; call two days before'] },
+    17: { q: 'At level 3 (“decide, then tell me”), they make a choice you wouldn’t have. What do you do?', o: ['Reverse it immediately', 'Respect it unless risky; discuss the reasoning', 'Take the task back'] },
+    24: { h: 'Delegate one thing this week' },
+    25: { h: 'Delegation in three lines', items: ['Hand over an outcome, not just a task', 'Agree outcome, authority level, checkpoints', 'Support without taking the work back'] },
+  },
+};

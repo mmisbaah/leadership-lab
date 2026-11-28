@@ -1,0 +1,136 @@
+{
+  "_readme": "Photo slots on the class slides. Put a licensed photo in public/assets/photos/, set src to its path (e.g. /assets/photos/briefing.jpg) and credit to the photographer or licence, then run npm run apply-photos. Slots with src null use the text-only layout. Set enabled to false to hide every photo.",
+  "enabled": true,
+  "slots": {
+    "foundations-cover": {
+      "deck": "foundations",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "A supervisor briefing a small team at the start of a working day in a Maldivian workplace",
+      "alt": "A team leader talking with their team at the start of a shift",
+      "src": null,
+      "credit": null
+    },
+    "functional-cover": {
+      "deck": "functional",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "A team lead reviewing a task plan with two or three colleagues, MNDF or local workplace",
+      "alt": "A leader checking a plan with a small team",
+      "src": null,
+      "credit": null
+    },
+    "followership-cover": {
+      "deck": "followership",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "Two colleagues in a quiet one-to-one conversation at a desk",
+      "alt": "A team member raising a point with their manager one to one",
+      "src": null,
+      "credit": null
+    },
+    "communication-cover": {
+      "deck": "communication",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "One person explaining a task, the other listening and taking notes",
+      "alt": "A colleague explaining a task while another listens closely",
+      "src": null,
+      "credit": null
+    },
+    "trust-cover": {
+      "deck": "trust",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "A meeting where a junior team member is speaking and others are listening",
+      "alt": "A quieter team member speaking up in a meeting",
+      "src": null,
+      "credit": null
+    },
+    "feedback-cover": {
+      "deck": "feedback",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "A private feedback conversation, two people seated, relaxed body language",
+      "alt": "Two colleagues in a private, calm conversation",
+      "src": null,
+      "credit": null
+    },
+    "teamwork-cover": {
+      "deck": "teamwork",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "A small team working side by side on a practical task, local setting",
+      "alt": "A team working together on a shared task",
+      "src": null,
+      "credit": null
+    },
+    "delegation-cover": {
+      "deck": "delegation",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "A handover moment: a leader passing a task file or checklist to a colleague",
+      "alt": "A leader handing over a folder of work to a colleague",
+      "src": null,
+      "credit": null
+    },
+    "motivation-cover": {
+      "deck": "motivation",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "One-to-one coaching on a practical task, e.g. a computer screen or equipment",
+      "alt": "A leader coaching a colleague through a new task",
+      "src": null,
+      "credit": null
+    },
+    "decisions-cover": {
+      "deck": "decisions",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "Three or four people weighing options around a table or whiteboard of real notes",
+      "alt": "A small group comparing options around a table",
+      "src": null,
+      "credit": null
+    },
+    "capstone-cover": {
+      "deck": "capstone",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "A busy operations room or team huddle dealing with a live problem",
+      "alt": "A team working through a problem under time pressure",
+      "src": null,
+      "credit": null
+    },
+    "capstone-scenario": {
+      "deck": "capstone",
+      "slide": 18,
+      "layout": "full",
+      "ratio": "16:9 landscape",
+      "subject": "A small team around a desk, end of a long day, working through a problem",
+      "alt": "A small team gathered around a desk dealing with a late project",
+      "src": null,
+      "credit": null
+    },
+    "commitment-cover": {
+      "deck": "commitment",
+      "slide": 1,
+      "layout": "split",
+      "ratio": "3:2 landscape",
+      "subject": "Close-up of a person writing on a card or notebook at the end of a workshop",
+      "alt": "A participant writing a commitment card",
+      "src": null,
+      "credit": null
+    }
+  }
+}
