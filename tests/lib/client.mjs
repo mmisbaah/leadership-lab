@@ -13,6 +13,7 @@ export class Client {
     else if (body !== undefined) { payload = JSON.stringify(body); h['Content-Type'] = 'application/json'; }
     const res = await fetch(BASE + path, { method, headers: h, body: payload, redirect: 'manual' });
     const set = res.headers.getSetCookie?.() || [];
+    if (set.length) this.lastSetCookie = set.join('\n');
     for (const c of set) { const kv = c.split(';')[0]; if (kv.endsWith('=')) this.cookie = ''; else this.cookie = kv; }
     return res;
   }
@@ -22,8 +23,8 @@ export class Client {
     let data; try { data = JSON.parse(text); } catch { data = text; }
     return { status: res.status, data, text };
   }
-  async login(id, pw) {
-    const res = await this.req('/login', { method: 'POST', form: { login: id, password: pw, next: '/' } });
+  async login(id, pw, { shared = false } = {}) {
+    const res = await this.req('/login', { method: 'POST', form: { login: id, password: pw, next: '/', ...(shared ? { shared: '1' } : {}) } });
     if (!this.cookie) throw new Error(`Sign-in failed for ${id} (${res.status})`);
     return this;
   }

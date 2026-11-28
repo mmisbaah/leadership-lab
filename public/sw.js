@@ -1,5 +1,5 @@
 // Offline support: cache the app shell; always go to the network first so content and sign-in stay current.
-const VERSION = '2026-11-28-6';
+const VERSION = '2026-11-28-7';
 const CACHE = 'leadership-lab-' + VERSION;
 const SHELL = ['/', '/css/fonts.css', '/css/app.css', '/app.js', '/lessons.js', '/decks.js', '/diagrams.js', '/icons.js', '/photos.js', '/qr.js', '/vendor/qrcode.js', '/assessment.js', '/i18n/index.js', '/i18n/en.js', '/i18n/dv.js', '/i18n/content/dv.js', '/assets/fonts/noto-sans-thaana-thaana-400-normal.woff2', '/assets/fonts/noto-sans-thaana-thaana-700-normal.woff2', '/assets/icon.svg', '/manifest.webmanifest',
   '/assets/fonts/ibm-plex-sans.woff2', '/assets/fonts/barlow-condensed-600.woff2', '/assets/fonts/barlow-condensed-700.woff2', '/assets/fonts/ibm-plex-mono-500.woff2'];

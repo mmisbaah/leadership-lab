@@ -784,11 +784,11 @@ table.att th[scope="row"] { font-weight: 600; text-transform: none; letter-spaci
 .att-all:hover { border-color: var(--ink-3); }
 .att-c { text-align: center; }
 .att-c input { width: 18px; height: 18px; accent-color: var(--ok); }
-.deck-tbl tr.skipped td { opacity: .5; }
-.deck-tbl tr.skipped td:nth-child(3) { opacity: 1; }
+.deck-tbl tr.skipped td:nth-child(-n+2) { text-decoration: line-through; text-decoration-thickness: 1px; }
+.deck-tbl tr.skipped { background: var(--sunk); }
 .tm-in { width: 72px; border: 1px solid var(--line); background: var(--sunk); border-radius: 6px; padding: 4px 6px; }
-.thumbs button.skip { opacity: .5; }
-.thumbs button.skip small { font-size: .7rem; }
+.thumbs button.skip { border-style: dashed !important; text-decoration: line-through; text-decoration-thickness: 1px; }
+.thumbs button.skip small { font-size: .7rem; text-decoration: none; display: inline-block; }
 
 /* ── Certificate verification block, self-assessment, privacy ── */
 .cert-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; width: 100%; margin-top: 3%; }
