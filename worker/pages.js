@@ -17,17 +17,20 @@ button{margin-top:20px;width:100%;font:inherit;font-weight:700;padding:12px;bord
 .err{background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad);border-radius:10px;padding:10px 12px;font-size:.88rem;margin-bottom:6px}
 p.note{color:var(--ink2);font-size:.85rem;margin:18px 0 0}p.note a{color:var(--gold);font-weight:600}
 .hint{color:var(--ink2);font-size:.8rem;margin:4px 0 0}
+label.check{display:flex;gap:10px;align-items:center;font-weight:600;margin:18px 0 0}label.check input{width:20px;height:20px;padding:0;margin:0;accent-color:var(--navy);flex:none}
 </style>`;
 const head = title => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} · Leadership Lab</title><meta name="theme-color" content="#142440"><link rel="icon" href="/assets/icon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest">${STYLE}</head><body><main>
 <div class="brand">${MARK}<p><small>Leadership training</small><b>Leadership Lab</b></p></div>`;
 
-export function loginPage({ error = '', id = '', next = '/', current = '' } = {}) {
+export function loginPage({ error = '', id = '', next = '/', current = '', shared = false } = {}) {
   return html(`${head('Sign in')}<h1>Sign in</h1>
 ${error ? `<div class="err" role="alert">${esc(error)}</div>` : ''}
 <form method="post" action="/login"><input type="hidden" name="next" value="${esc(next)}">
 <label for="login">Login ID</label><input id="login" name="login" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required value="${esc(id)}" ${id ? '' : 'autofocus'}>
 <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required ${id ? 'autofocus' : ''}>
+<label class="check"><input type="checkbox" name="shared" value="1" ${shared ? 'checked' : ''} aria-describedby="shared-hint"> This is a shared computer</label>
+<p class="hint" id="shared-hint">You are signed out when the browser closes, and nothing is kept on this computer.</p>
 <button type="submit">Sign in</button></form>
 ${current ? `<p class="note">You're signed in as <b>${esc(current)}</b>. Sign in with another login to switch, or <a href="/">go back to the course</a>.</p>` : ''}
 <p class="note">Have a join code from your facilitator? <a href="/join">Create your account</a>.</p>
@@ -55,4 +58,21 @@ export function signedInPage(next, setCookie) {
   return html(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Signing in…</title><meta http-equiv="refresh" content="0;url=${esc(next)}"><style>body{font:15px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#E4E9F0;color:#16213A}a{color:#13223F}</style></head>
 <body><main><p>Signing in… <a href="${esc(next)}">Continue</a></p></main></body></html>`, 200, { 'Set-Cookie': setCookie });
+}
+
+// Public certificate check: /verify/<code>. Shows only what is printed on the certificate itself.
+export function verifyPage(cert, code) {
+  const fmt = d => new Date(d + (d.length === 10 ? 'T00:00:00Z' : '')).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const body = !cert
+    ? `<h1>Certificate not found</h1><div class="err" role="alert">No certificate has the code <b>${esc(code)}</b>. Check the code printed at the bottom of the certificate.</div>`
+    : cert.status !== 'valid'
+      ? `<h1>Certificate revoked</h1><div class="err" role="alert">Certificate <b>${esc(cert.code)}</b> was issued to ${esc(cert.name)} but has since been revoked by the course team.</div>`
+      : `<h1>Certificate verified</h1><p class="ok" role="status">✔ This is a genuine Leadership Lab certificate.</p>
+<dl><dt>Awarded to</dt><dd>${esc(cert.name)}</dd><dt>Course</dt><dd>${esc(cert.course)}</dd>${cert.class_name ? `<dt>Class</dt><dd>${esc(cert.class_name)}</dd>` : ''}
+<dt>Sessions attended</dt><dd>${cert.sessions}</dd><dt>Completed</dt><dd>${fmt(cert.completed_on)}</dd><dt>Issued</dt><dd>${fmt(cert.issued_at)}</dd><dt>Code</dt><dd><code>${esc(cert.code)}</code></dd></dl>`;
+  return html(`${head('Verify a certificate')}${body}
+<form method="get" action="/verify"><label for="code">Check another code</label><input id="code" name="code" autocapitalize="characters" spellcheck="false" placeholder="LL-2026-XXXX-XXXX" required><button type="submit">Check</button></form>
+<style>.ok{background:color-mix(in srgb,#1B7A4B 14%,transparent);color:#166A40;border-radius:10px;padding:10px 12px;font-weight:600}@media (prefers-color-scheme:dark){.ok{color:#4CC38A}}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:16px 0}dt{color:var(--ink2);font-size:.85rem}dd{margin:0;font-weight:600}code{font-size:.95em}</style>
+</main></body></html>`, cert ? 200 : 404);
 }

@@ -7,7 +7,6 @@ export const MAX_FAILS = 8;
 export const LOCK_SECONDS = 900;
 export const MIN_PASSWORD = 8;
 export const NOTE_MAX = 4000;
-export const LESSON_IDS = new Set(['foundations', 'functional', 'followership', 'communication', 'trust', 'feedback', 'teamwork', 'delegation', 'motivation', 'decisions', 'capstone', 'commitment']);
 
 export const te = new TextEncoder();
 export const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -72,8 +71,12 @@ async function sessionKey(env) {
   return signingKey;
 }
 const sign = async (env, data) => b64u(await crypto.subtle.sign('HMAC', await sessionKey(env), te.encode(data)));
-export async function makeSession(env, user) {
-  const body = b64u(te.encode(JSON.stringify({ i: user.id, v: user.ver, x: Date.now() + SESSION_DAYS * 864e5 })));
+// Shared-computer sessions (s: 1) last at most 12 hours and travel in a cookie with no Max-Age, so the browser drops
+// it when it closes. Normal sessions last SESSION_DAYS.
+export const SHARED_HOURS = 12;
+export async function makeSession(env, user, shared = false) {
+  const life = shared ? SHARED_HOURS * 36e5 : SESSION_DAYS * 864e5;
+  const body = b64u(te.encode(JSON.stringify({ i: user.id, v: user.ver, x: Date.now() + life, ...(shared ? { s: 1 } : {}) })));
   return `${body}.${await sign(env, body)}`;
 }
 export async function readSession(env, request) {
@@ -83,35 +86,15 @@ export async function readSession(env, request) {
   if (!body || !mac || !same(mac, await sign(env, body))) return null;
   try { const s = JSON.parse(new TextDecoder().decode(unb64u(body))); return s.x > Date.now() ? s : null; } catch { return null; }
 }
-export const cookie = (value, maxAge) => `${COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+// maxAge null: a session cookie that ends when the browser closes.
+export const cookie = (value, maxAge) => `${COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax${maxAge === null ? '' : `; Max-Age=${maxAge}`}`;
+export const sessionCookie = async (env, user, shared = false) => cookie(await makeSession(env, user, shared), shared ? null : SESSION_DAYS * 86400);
 
-// ---------- storage ----------
-export const getJSON = async (env, key, fallback = null) => { const v = await env.USERS.get(key); return v ? JSON.parse(v) : fallback; };
-export const getUser = (env, id) => getJSON(env, 'user:' + id);
-export const putUser = (env, u) => env.USERS.put('user:' + u.id, JSON.stringify(u));
-export const getProgress = (env, id) => getJSON(env, 'progress:' + id, {});
-export const publicUser = u => ({ id: u.id, name: u.name, admin: !!u.admin, locked: !!u.locked, classId: u.classId || null, created: u.created });
+// ---------- KV (rate limits, sign-in lockouts, alert throttling) ----------
+// People, classes and progress live in D1 (worker/db.js). KV keeps only short-lived counters.
 export async function listKeys(env, prefix, ns = env.USERS) {
   const out = []; let cursor;
   do { const page = await ns.list({ prefix, cursor }); page.keys.forEach(k => out.push(k.name)); cursor = page.list_complete ? null : page.cursor; } while (cursor);
-  return out;
-}
-export async function listUsers(env) {
-  const ids = (await listKeys(env, 'user:')).map(k => k.slice(5));
-  const users = (await Promise.all(ids.map(id => getUser(env, id)))).filter(Boolean);
-  return users.sort((a, b) => a.name.localeCompare(b.name));
-}
-// What a facilitator may see of someone's progress: completion and quiz answers only. Private notes and
-// reflections never leave this function, so no facilitator endpoint can read, list or export them.
-export function progressForFacilitator(p) {
-  const out = {};
-  for (const [lesson, e] of Object.entries(p || {})) {
-    if (!LESSON_IDS.has(lesson)) continue;
-    const v = {};
-    if (e.done) { v.done = true; v.doneAt = e.doneAt || null; }
-    if (Number.isInteger(e.choice)) v.choice = e.choice;
-    out[lesson] = v;
-  }
   return out;
 }
 // Simple fixed-window rate limit in KV (approximate; enough to slow down guessing).
@@ -120,4 +103,19 @@ export async function rateLimited(env, key, max, seconds) {
   if (n >= max) return true;
   await env.USERS.put('rl:' + key, String(n + 1), { expirationTtl: Math.max(60, seconds) });
   return false;
+}
+
+// ---------- errors and alerts ----------
+// Structured log line for every unhandled error, plus an optional POST to ALERT_WEBHOOK_URL (Slack, Teams, Discord
+// or anything that accepts JSON). The same alert is sent at most once every 15 minutes.
+export async function alert(env, title, detail = {}) {
+  console.error(JSON.stringify({ level: 'error', title, ...detail, at: new Date().toISOString() }));
+  if (!env.ALERT_WEBHOOK_URL) return;
+  try {
+    const key = 'alert:' + b64u(await crypto.subtle.digest('SHA-256', te.encode(title))).slice(0, 24);
+    if (env.USERS && await env.USERS.get(key)) return;
+    if (env.USERS) await env.USERS.put(key, '1', { expirationTtl: 900 });
+    const text = `Leadership Lab: ${title}${detail.message ? `\n${detail.message}` : ''}${detail.path ? `\nPath: ${detail.path}` : ''}`;
+    await fetch(env.ALERT_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, content: text, title, ...detail }) });
+  } catch (e) { console.error(JSON.stringify({ level: 'error', title: 'Alert webhook failed', message: String(e) })); }
 }

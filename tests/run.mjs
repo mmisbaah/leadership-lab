@@ -17,6 +17,7 @@ if (!env.BASE_URL) {
   const persist = mkdtempSync(join(tmpdir(), 'll-test-'));
   const port = 8900 + Math.floor(Math.random() * 90);
   env.ADMIN_ID = 'test_admin';
+  execFileSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'DB', '--local', '--persist-to', persist], { cwd: root, env, stdio: 'ignore' });
   env.TEST_PERSIST = persist;
   env.ADMIN_PW = execFileSync('node', ['scripts/create-admin.mjs', env.ADMIN_ID, 'Test Facilitator', '--local', '--persist-to', persist, '--quiet'], { cwd: root, env, encoding: 'utf8' }).trim().split('\n').pop();
   server = spawn('npx', ['wrangler', 'dev', '--local', '--ip', '127.0.0.1', '--port', String(port), '--persist-to', persist, '--log-level', 'warn'], { cwd: root, env, stdio: ['ignore', 'inherit', 'inherit'], detached: true });
