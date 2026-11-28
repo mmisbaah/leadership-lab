@@ -5,7 +5,20 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "deploy:inline": "node scripts/dev/build-inline.mjs && wrangler deploy --config .wrangler/inline/wrangler.json",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "test": "node tests/run.mjs",
+    "test:content": "node --test tests/content.test.mjs",
+    "export-content": "node scripts/export-content.mjs",
+    "restore-backup": "node scripts/restore-backup.mjs",
     "create-admin": "node scripts/create-admin.mjs"
   },
-  "devDependencies": { "wrangler": "^4.40.0" }
+  "devDependencies": {
+    "axe-core": "4.14.1",
+    "playwright": "1.63.0",
+    "wrangler": "^4.40.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }

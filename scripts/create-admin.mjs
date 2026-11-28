@@ -1,5 +1,5 @@
 // Creates the first facilitator account in the USERS KV namespace.
-// Usage: npm run create-admin -- <login-id> "<Full name>" [--local]
+// Usage: npm run create-admin -- <login-id> "<Full name>" [--local [--persist-to <dir>]] [--quiet]
 // Prints the generated password once. Needs wrangler to be signed in (or CLOUDFLARE_API_TOKEN set) unless --local.
 import { execFileSync } from 'node:child_process';
 import { webcrypto as crypto } from 'node:crypto';
@@ -15,5 +15,8 @@ const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(passwo
 const hash = b64u(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100000 }, key, 256));
 const record = { id, name, admin: true, salt: b64u(salt), hash, iter: 100000, ver: 1, created: new Date().toISOString() };
 
-execFileSync('npx', ['wrangler', 'kv', 'key', 'put', '--binding=USERS', rest.includes('--local') ? '--local' : '--remote', `user:${id}`, JSON.stringify(record)], { stdio: 'inherit' });
+const persist = rest.includes('--persist-to') ? ['--persist-to', rest[rest.indexOf('--persist-to') + 1]] : [];
+const quiet = rest.includes('--quiet');
+execFileSync('npx', ['wrangler', 'kv', 'key', 'put', '--binding=USERS', rest.includes('--local') ? '--local' : '--remote', ...persist, `user:${id}`, JSON.stringify(record)], { stdio: quiet ? 'ignore' : 'inherit' });
+if (quiet) { console.log(password); process.exit(0); }
 console.log(`\nFacilitator account created.\n  Login ID: ${id}\n  Password: ${password}\nSign in and change the password under "Your account".`);

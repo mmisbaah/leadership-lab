@@ -22,7 +22,7 @@ const ASSETS = { async fetch(input) {
   if (inm && inm.split(',').map(s => s.trim().replace(/^W\\\//, '')).includes(FILES[p].etag)) return new Response(null, { status: 304, headers });
   return new Response(body(p), { headers });
 } };
-export default { fetch: (req, env, ctx) => app.fetch(req, { ...env, ASSETS }, ctx) };
+export default { ...app, fetch: (req, env, ctx) => app.fetch(req, { ...env, ASSETS }, ctx) };
 export { PollRoom } from '../../worker/index.js';
 `);
 const cfg = JSON.parse(readFileSync('wrangler.jsonc', 'utf8').replace(/^\s*\/\/.*$/gm, ''));

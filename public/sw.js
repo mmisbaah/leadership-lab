@@ -1,5 +1,5 @@
 // Offline support: cache the app shell; always go to the network first so content and sign-in stay current.
-const VERSION = '2026-11-28-5';
+const VERSION = '2026-11-28-6';
 const CACHE = 'leadership-lab-' + VERSION;
 const SHELL = ['/', '/css/fonts.css', '/css/app.css', '/app.js', '/lessons.js', '/decks.js', '/diagrams.js', '/icons.js', '/assets/icon.svg', '/manifest.webmanifest',
   '/assets/fonts/ibm-plex-sans.woff2', '/assets/fonts/barlow-condensed-600.woff2', '/assets/fonts/barlow-condensed-700.woff2', '/assets/fonts/ibm-plex-mono-500.woff2'];
@@ -12,7 +12,7 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/') || url.pathname === '/login') return;
+  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/') || url.pathname === '/login' || url.pathname === '/join') return;
   e.respondWith(
     fetch(e.request).then(res => {
       if (res.ok && !res.redirected) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request.mode === 'navigate' ? '/' : e.request, copy)); }

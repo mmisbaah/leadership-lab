@@ -13,7 +13,7 @@ const PHASES = [
   { key: 'APPLY', name: 'Apply', c: 'var(--p5)', blurb: 'Turn the course into one specific action you will take at work.' },
 ];
 const TABS = [['plan', 'Facilitator plan'], ['class', 'Class'], ['quiz', 'Quiz'], ['notes', 'Notes']];
-const PAGES = ['home', 'live', 'sessions', 'plan', 'reference', 'help', 'account', 'team'];
+const PAGES = ['home', 'live', 'sessions', 'plan', 'reference', 'help', 'account', 'action', 'checkin', 'review', 'certificate', 'team', 'report'];
 const LETTERS = 'ABCDEF';
 
 const $ = s => document.querySelector(s);
@@ -84,7 +84,7 @@ document.addEventListener('click', e => { if (e.target.closest('[data-theme-togg
 
 // ---------- shell ----------
 function shell() {
-  const items = [['home', 'Home'], ['live', 'Live poll'], ['sessions', 'Sessions', lessons.length], ['plan', 'Course plan'], ['reference', 'Reference'], ['help', 'Help'], ['account', 'Account']];
+  const items = [['home', 'Home'], ['live', 'Live poll'], ['sessions', 'Sessions', lessons.length], ['plan', 'Course plan'], ['reference', 'Reference'], ['review', 'Review quiz'], ['action', 'Action plan'], ['checkin', 'Check-in'], ['help', 'Help'], ['account', 'Account']];
   if (me?.admin) items.push(['team', 'Participants']);
   $('#nav').innerHTML = items.map(([id, label, n]) => `<button class="${page === id ? 'on' : ''}" data-go="${id}" ${page === id ? 'aria-current="page"' : ''}>${label}${n ? `<span class="count">${n}</span>` : ''}</button>`).join('');
   $('#tabs').innerHTML = [['home', 'Home'], ['live', 'Live'], ['sessions', 'Sessions'], ['plan', 'Plan'], ['account', 'Account']]
@@ -122,8 +122,10 @@ function route() {
     return;
   }
   closeLessonView();
-  page = PAGES.includes(h) ? h : 'home';
-  if (page === 'team' && me && !me.admin) page = 'home';
+  const rep = h.match(/^report\/([\w-]+)$/);
+  if (rep) reportId = rep[1];
+  page = rep ? 'report' : PAGES.includes(h) && h !== 'report' ? h : 'home';
+  if ((page === 'team' || page === 'report') && me && !me.admin) page = 'home';
   lastPage = page;
   renderPage();
 }
@@ -139,8 +141,13 @@ function renderPage() {
   else if (page === 'help') v.innerHTML = helpHTML();
   else if (page === 'account') { v.innerHTML = accountHTML(); bindAccount(); }
   else if (page === 'team') { v.innerHTML = `<div class="page-head"><div class="eyebrow">Facilitator</div><h1>Participants</h1><p>Loading…</p></div>`; loadTeam(); }
+  else if (page === 'report') { v.innerHTML = `<div class="page-head"><div class="eyebrow">Facilitator</div><h1>Class report</h1><p>Loading…</p></div>`; loadReport(); }
+  else if (page === 'action') v.innerHTML = actionHTML();
+  else if (page === 'certificate') v.innerHTML = certificateHTML();
+  else if (page === 'checkin') { v.innerHTML = checkinHTML(); bindCheckin(); }
+  else if (page === 'review') { v.innerHTML = reviewHTML(); bindReview(); }
   else { v.innerHTML = homeHTML(); bindHome(); }
-  document.title = ({ live: 'Live poll · ', sessions: 'Sessions · ', plan: 'Course plan · ', reference: 'Reference · ', help: 'Help · ', account: 'Account · ', team: 'Participants · ' }[page] || '') + 'Leadership Lab';
+  document.title = ({ live: 'Live poll · ', sessions: 'Sessions · ', plan: 'Course plan · ', reference: 'Reference · ', help: 'Help · ', account: 'Account · ', team: 'Participants · ', report: 'Class report · ', action: 'Action plan · ', certificate: 'Certificate · ', checkin: 'Check-in · ', review: 'Review quiz · ' }[page] || '') + 'Leadership Lab';
 }
 
 // ---------- cards ----------
@@ -309,7 +316,7 @@ setInterval(() => { if (me && !P && page !== 'live' && !L) checkLive(); }, 10000
 
 // ---------- account ----------
 function accountHTML() {
-  return `<div class="page-head"><div class="eyebrow">Your account</div><h1>${esc(me?.name || 'Account')}</h1><p>Signed in as <b>${esc(me?.id || '…')}</b> ${me?.admin ? ' · facilitator' : ''}.</p></div>
+  return `<div class="page-head"><div class="eyebrow">Your account</div><h1>${esc(me?.name || 'Account')}</h1><p>Signed in as <b>${esc(me?.id || '…')}</b>${me?.admin ? ' · facilitator' : ''}${me?.className ? ` · ${esc(me.className)}` : ''}.</p></div>
   <div class="grid2">
     ${me?.locked ? `<section class="panel"><h3>Demo account</h3><p>This is a shared demo account, so its password can’t be changed here.</p><p class="small muted">Progress and notes on this account are visible to anyone who signs in with it. Ask your facilitator for your own login to keep your work private.</p></section>`
     : `<section class="panel"><h3>Change your password</h3><form id="pwForm" class="list">
@@ -320,6 +327,7 @@ function accountHTML() {
       <div class="stats"><div class="stat"><b>${doneCount()}/${lessons.length}</b> <span>sessions done</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.choice !== undefined).length}</b> <span>quizzes answered</span></div><div class="stat"><b>${lessons.filter(l => saved[l.id]?.note).length}</b> <span>notes written</span></div></div>
       <p class="muted small">Starting over clears your quiz answers, notes and completed sessions.</p>
       <div class="row"><button class="btn danger" id="resetBtn">Start over</button></div><p class="msg" id="resetMsg" role="status"></p>
+      <h3 style="margin-top:8px">After the course</h3><div class="row"><a class="btn" href="#action">Action plan</a><a class="btn" href="#checkin">30-day check-in</a><a class="btn" href="#review">Review quiz</a>${allDone() ? '<a class="btn primary" href="#certificate">Certificate</a>' : `<span class="small muted">Certificate unlocks when all ${lessons.length} sessions are complete.</span>`}</div>
       <h3 style="margin-top:8px">Presenting</h3><label class="check"><input type="checkbox" id="confOpt" ${celebrate() ? 'checked' : ''}> Confetti for correct quick-check answers</label>
       <p class="small muted">Off by default: correct answers get a quiet green highlight. Also switchable in presenter view.</p>
       <h3 style="margin-top:8px">Sign out</h3><div class="row"><button class="btn" id="logoutBtn">Sign out</button><a class="btn" href="/login?switch=1">Switch account</a></div></section>
@@ -345,51 +353,326 @@ function bindAccount() {
   };
 }
 
-// ---------- facilitator: participants ----------
+// ---------- facilitator: classes and participants ----------
+// One class at a time (or everyone). Private notes and check-ins are never sent to this page: the server only
+// returns completion and quiz answers for other people.
+let classesCache = null;
+async function loadClasses(force) {
+  if (!classesCache || force) classesCache = await call('/api/classes');
+  return classesCache;
+}
+const teamFilter = () => { try { return localStorage.getItem('ll-team-class') || 'all'; } catch { return 'all'; } };
+const setTeamFilter = v => { try { localStorage.setItem('ll-team-class', v); } catch {} };
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '–';
+const pwGen = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
+function download(name, text, type = 'text/csv') {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+  document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+const toCSV = rows => rows.map(r => r.map(csvCell).join(',')).join('\n');
+// Parse pasted CSV or TSV (optional header row: name, login, password).
+function parseRows(text) {
+  const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return [];
+  const sep = lines[0].includes('\t') ? '\t' : ',';
+  const split = line => { const out = []; let cur = '', q = false; for (const ch of line) { if (ch === '"') q = !q; else if (ch === sep && !q) { out.push(cur.trim()); cur = ''; } else cur += ch; } out.push(cur.trim()); return out; };
+  let rows = lines.map(split), head = rows[0].map(h => h.toLowerCase());
+  let idx = { name: 0, login: 1, password: 2 };
+  if (head.includes('name')) { idx = { name: head.indexOf('name'), login: head.findIndex(h => /login|id|user/.test(h)), password: head.indexOf('password') }; rows = rows.slice(1); }
+  return rows.map(r => ({ name: r[idx.name] || '', login: idx.login >= 0 ? r[idx.login] || '' : '', password: idx.password >= 0 ? r[idx.password] || '' : '' })).filter(r => r.name);
+}
+
 async function loadTeam() {
-  let rows;
-  try { rows = await call('/api/team'); }
+  let data, rows;
+  const filter = teamFilter();
+  try { [data, rows] = await Promise.all([loadClasses(true), call('/api/team?class=' + encodeURIComponent(filter))]); }
   catch (err) { $('#view').innerHTML = `<div class="page-head"><h1>Participants</h1><p class="msg bad">${esc(err.message)}</p></div>`; return; }
   if (page !== 'team') return;
-  const when = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '–';
-  $('#view').innerHTML = `<div class="page-head"><div class="eyebrow">Facilitator</div><h1>Participants</h1>
-  <p>${rows.length} account${rows.length === 1 ? '' : 's'}. You see each person’s progress and how many notes they wrote, but not what the notes say.</p></div>
-  <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>Login ID</th><th>Progress</th><th>Notes</th><th>Last completed</th><th></th></tr></thead><tbody>
-  ${rows.map(r => `<tr><td>${esc(r.name)}${r.admin ? ' <span class="chip dim">facilitator</span>' : ''}${r.locked ? ' <span class="chip dim">demo</span>' : ''}</td><td class="mono">${esc(r.id)}</td>
+  const classes = data.classes, active = classes.filter(c => c.status === 'active'), archived = classes.filter(c => c.status !== 'active');
+  const cur = classes.find(c => c.id === filter);
+  const className = id => classes.find(c => c.id === id)?.name || 'No class';
+  const opt = (v, label, sel) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(label)}</option>`;
+  const classOptions = sel => opt('', 'No class', sel || '') + active.map(c => opt(c.id, c.name, sel)).join('') + (archived.length ? `<optgroup label="Archived">${archived.map(c => opt(c.id, c.name, sel)).join('')}</optgroup>` : '');
+  const joinURL = c => `${location.origin}/join?code=${encodeURIComponent(c.code)}`;
+  $('#view').innerHTML = `<div class="page-head"><div class="eyebrow">Facilitator</div><h1>Participants and classes</h1>
+  <p>Work with one class at a time. You see each person’s completed sessions and quiz answers. Private notes and check-ins are never shown to facilitators.</p></div>
+  <section class="panel"><div class="row class-bar"><label for="classSel" class="small"><b>Class</b></label>
+    <select id="classSel">${opt('all', 'All participants', filter)}${active.map(c => opt(c.id, `${c.name} (${c.members})`, filter)).join('')}${opt('unassigned', `No class (${data.unassigned})`, filter)}${archived.length ? `<optgroup label="Archived">${archived.map(c => opt(c.id, `${c.name} (${c.members})`, filter)).join('')}</optgroup>` : ''}</select>
+    ${cur || filter === 'unassigned' ? `<a class="btn" href="#report/${esc(filter)}">Class report</a>` : ''}
+    <button class="btn" id="newClassBtn">New class</button></div>
+    ${cur ? `<div class="class-card"><div><div class="eyebrow">Join code</div><p class="join-code mono">${esc(cur.code)}</p><p class="small muted">Participants create their own login at <b>${esc(location.host)}/join</b> with this code.</p></div>
+      <div class="row"><button class="btn sm" id="copyCode">Copy join link</button><button class="btn sm" id="newCode">New code</button><button class="btn sm" id="renameClass">Rename</button>
+      <button class="btn sm" id="archiveClass">${cur.status === 'active' ? 'Archive class' : 'Restore class'}</button></div>
+      <p class="small muted">${cur.status === 'active' ? 'Active' : 'Archived: the join code no longer works'} · created ${fmtDate(cur.created)} · ${cur.members} participant${cur.members === 1 ? '' : 's'}</p></div>` : ''}
+    <form id="classForm" class="list" hidden><div class="form-row"><div class="field"><label for="cName">Class name</label><input id="cName" maxlength="80" required placeholder="e.g. MNDF supervisors, January"></div>
+      <div class="field"><label for="cCode">Join code (optional)</label><input id="cCode" maxlength="16" placeholder="Made for you, e.g. MS-7KQ" autocapitalize="characters"></div></div>
+      <div class="row"><button class="btn primary">Create class</button><button type="button" class="btn" id="cancelClass">Cancel</button></div><p class="msg" id="classMsg" role="status"></p></form></section>
+  <div class="tbl-wrap"><table><caption class="sr">Participants${cur ? ' in ' + esc(cur.name) : ''}</caption><thead><tr><th scope="col">Name</th><th scope="col">Login ID</th><th scope="col">Class</th><th scope="col">Progress</th><th scope="col">Quizzes</th><th scope="col">Last completed</th><th scope="col"><span class="sr">Actions</span></th></tr></thead><tbody>
+  ${rows.length ? rows.map(r => `<tr><td>${esc(r.name)}${r.admin ? ' <span class="chip dim">facilitator</span>' : ''}${r.locked ? ' <span class="chip dim">demo</span>' : ''}</td><td class="mono">${esc(r.id)}</td>
+    <td>${r.admin ? '<span class="small muted">–</span>' : `<label class="sr" for="mv-${esc(r.id)}">Class for ${esc(r.name)}</label><select id="mv-${esc(r.id)}" data-move="${esc(r.id)}">${classOptions(r.classId)}</select>`}</td>
     <td style="white-space:nowrap"><span class="dots" title="${r.done.length} of ${lessons.length}">${lessons.map(l => `<span class="${r.done.includes(l.id) ? 'on' : ''}" title="${esc(l.title)}"></span>`).join('')}</span>${r.done.length}/${lessons.length}</td>
-    <td>${r.notes}</td><td>${when(r.last)}</td>
-    <td style="white-space:nowrap">${r.id === me.id ? '<span class="small muted">you</span>' : `<button class="link" data-reset="${esc(r.id)}">New password</button> · <button class="link danger" data-remove="${esc(r.id)}" data-name="${esc(r.name)}">Remove</button>`}</td></tr>`).join('')}
+    <td>${r.quizzes}/${lessons.length}</td><td>${fmtDate(r.last)}</td>
+    <td style="white-space:nowrap">${r.id === me.id ? '<span class="small muted">you</span>' : `<button class="link" data-reset="${esc(r.id)}">New password</button> · <button class="link danger" data-remove="${esc(r.id)}" data-name="${esc(r.name)}">Remove</button>`}</td></tr>`).join('') : `<tr><td colspan="7" class="muted">No participants here yet.</td></tr>`}
   </tbody></table></div>
-  <section class="panel"><h3>Add a participant</h3><form id="addForm" class="list">
-    <div class="form-row"><div class="field"><label for="nName">Name</label><input id="nName" required maxlength="80" placeholder="e.g. Aishath Ali"></div>
-    <div class="field"><label for="nId">Login ID</label><input id="nId" required autocapitalize="none" spellcheck="false" placeholder="e.g. aishath"></div>
-    <div class="field"><label for="nPw">Starting password</label><input id="nPw" required minlength="8" placeholder="8+ characters"></div></div>
-    <label class="check"><input type="checkbox" id="nAdmin"> Facilitator (can manage accounts)</label>
-    <label class="check"><input type="checkbox" id="nLocked"> Demo account (shared; its password can’t be changed by whoever signs in)</label>
-    <div class="row"><button class="btn primary">Add account</button><button type="button" class="btn" id="genPw">Suggest a password</button></div>
-    <p class="msg" id="addMsg" role="status"></p></form></section>`;
-  const pw = () => Array.from(crypto.getRandomValues(new Uint8Array(10)), b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
-  $('#genPw').onclick = () => { $('#nPw').value = pw(); };
+  <div class="grid2">
+    <section class="panel"><h3>Add a participant</h3><form id="addForm" class="list">
+      <div class="field"><label for="nName">Name</label><input id="nName" required maxlength="80" placeholder="e.g. Aishath Ali"></div>
+      <div class="form-row"><div class="field"><label for="nId">Login ID</label><input id="nId" required autocapitalize="none" spellcheck="false" placeholder="e.g. aishath"></div>
+      <div class="field"><label for="nPw">Starting password</label><input id="nPw" required minlength="8" placeholder="8+ characters"></div></div>
+      <div class="field"><label for="nClass">Class</label><select id="nClass">${classOptions(cur?.id || '')}</select></div>
+      <label class="check"><input type="checkbox" id="nAdmin"> Facilitator (can manage accounts)</label>
+      <label class="check"><input type="checkbox" id="nLocked"> Demo account (shared; its password can’t be changed by whoever signs in)</label>
+      <div class="row"><button class="btn primary">Add account</button><button type="button" class="btn" id="genPw">Suggest a password</button></div>
+      <p class="msg" id="addMsg" role="status"></p></form></section>
+    <section class="panel"><h3>Bulk import</h3><form id="importForm" class="list">
+      <p class="small muted">One person per line: <b>name</b>, then optional <b>login ID</b> and <b>password</b>, separated by commas or tabs (paste straight from a spreadsheet). Missing login IDs and passwords are made for you.</p>
+      <div class="field"><label for="impClass">Into class</label><select id="impClass" required>${active.map(c => opt(c.id, c.name, cur?.id)).join('')}</select></div>
+      <div class="field"><label for="impText">Participants</label><textarea id="impText" rows="6" placeholder="name,login,password&#10;Aishath Ali,aishath,&#10;Ibrahim Rasheed,,"></textarea></div>
+      <div class="field"><label for="impFile">Or choose a CSV file</label><input id="impFile" type="file" accept=".csv,.tsv,.txt,text/csv"></div>
+      <div class="row"><button class="btn primary" ${active.length ? '' : 'disabled'}>Import</button></div>
+      ${active.length ? '' : '<p class="small muted">Create a class first.</p>'}<p class="msg" id="impMsg" role="status"></p><div id="impResult"></div></form></section>
+  </div>
+  <section class="panel"><h3>Backups</h3><p class="small muted" id="bkInfo">Loading…</p><div class="row"><button class="btn" id="bkNow">Back up now</button></div><div id="bkList"></div></section>`;
+
+  $('#classSel').onchange = e => { setTeamFilter(e.target.value); loadTeam(); };
+  $('#newClassBtn').onclick = () => { $('#classForm').hidden = false; $('#cName').focus(); };
+  $('#cancelClass').onclick = () => { $('#classForm').hidden = true; };
+  $('#classForm').onsubmit = async e => {
+    e.preventDefault();
+    try { const c = await call('/api/classes', { name: $('#cName').value, code: $('#cCode').value || undefined }); setTeamFilter(c.id); await loadTeam(); toast(`Class created. Join code ${c.code}`); }
+    catch (err) { $('#classMsg').className = 'msg bad'; $('#classMsg').textContent = err.message; }
+  };
+  if (cur) {
+    $('#copyCode').onclick = async () => { try { await navigator.clipboard.writeText(joinURL(cur)); toast('Join link copied'); } catch { prompt('Copy the join link:', joinURL(cur)); } };
+    $('#newCode').onclick = async () => { if (!confirm('Make a new join code? The old code stops working.')) return; try { await call('/api/classes/update', { id: cur.id, code: 'new' }); loadTeam(); } catch (err) { alert(err.message); } };
+    $('#renameClass').onclick = async () => { const name = prompt('Class name:', cur.name); if (!name) return; try { await call('/api/classes/update', { id: cur.id, name }); loadTeam(); } catch (err) { alert(err.message); } };
+    $('#archiveClass').onclick = async () => { try { await call('/api/classes/update', { id: cur.id, status: cur.status === 'active' ? 'archived' : 'active' }); loadTeam(); } catch (err) { alert(err.message); } };
+  }
+  $$('[data-move]').forEach(s => s.onchange = async () => { try { await call('/api/users/class', { id: s.dataset.move, classId: s.value || null }); toast(`Moved to ${className(s.value)}`); loadTeam(); } catch (err) { alert(err.message); } });
+  $('#genPw').onclick = () => { $('#nPw').value = pwGen(); };
   $('#addForm').onsubmit = async e => {
     e.preventDefault();
     try {
       const id = $('#nId').value.trim().toLowerCase(), password = $('#nPw').value;
-      await call('/api/users', { id, name: $('#nName').value, password, admin: $('#nAdmin').checked, locked: $('#nLocked').checked });
+      await call('/api/users', { id, name: $('#nName').value, password, admin: $('#nAdmin').checked, locked: $('#nLocked').checked, classId: $('#nClass').value || null });
       await loadTeam();
       const m = $('#addMsg'); m.className = 'msg ok'; m.textContent = `Account created. Give them login ID “${id}” and password “${password}”.`;
     } catch (err) { const m = $('#addMsg'); m.className = 'msg bad'; m.textContent = err.message; }
   };
+  $('#impFile').onchange = async e => { const f = e.target.files[0]; if (f) $('#impText').value = await f.text(); };
+  $('#importForm').onsubmit = async e => {
+    e.preventDefault();
+    const rows = parseRows($('#impText').value), msg = $('#impMsg');
+    if (!rows.length) { msg.className = 'msg bad'; msg.textContent = 'Paste at least one name.'; return; }
+    try {
+      const r = await call('/api/classes/import', { id: $('#impClass').value, rows });
+      const ok = r.results.filter(x => x.status === 'created');
+      msg.className = 'msg ok'; msg.textContent = `${ok.length} account${ok.length === 1 ? '' : 's'} created in ${r.class.name}.`;
+      $('#impResult').innerHTML = `<div class="tbl-wrap"><table><caption class="sr">Import results</caption><thead><tr><th scope="col">Name</th><th scope="col">Login ID</th><th scope="col">Password</th><th scope="col">Result</th></tr></thead><tbody>
+        ${r.results.map(x => `<tr><td>${esc(x.name || '')}</td><td class="mono">${esc(x.id || '')}</td><td class="mono">${esc(x.password || '')}</td><td>${x.status === 'created' ? 'Created' : esc(x.error || x.status)}</td></tr>`).join('')}</tbody></table></div>
+        <div class="row"><button class="btn" id="impCsv" type="button">Download logins (CSV)</button></div><p class="small muted">Passwords are shown once. Download the list before leaving this page.</p>`;
+      $('#impCsv').onclick = () => download(`logins-${r.class.code}.csv`, toCSV([['Name', 'Login ID', 'Password', 'Class', 'Join link'], ...ok.map(x => [x.name, x.id, x.password, r.class.name, `${location.origin}/login`])]));
+      classesCache = null;
+    } catch (err) { msg.className = 'msg bad'; msg.textContent = err.message; }
+  };
   $$('[data-reset]').forEach(b => b.onclick = async () => {
-    const password = prompt(`New password for ${b.dataset.reset} (at least 8 characters):`, pw());
+    const password = prompt(`New password for ${b.dataset.reset} (at least 8 characters):`, pwGen());
     if (!password) return;
     try { await call('/api/users', { id: b.dataset.reset, password, replace: true }); alert(`Password changed. Their new password is: ${password}`); loadTeam(); }
     catch (err) { alert(err.message); }
   });
   $$('[data-remove]').forEach(b => b.onclick = async () => {
-    if (!confirm(`Remove ${b.dataset.name}? Their progress and notes are deleted too.`)) return;
+    if (!confirm(`Remove ${b.dataset.name}? Their progress, notes and check-ins are deleted too.`)) return;
     try { await call('/api/users/remove', { id: b.dataset.remove }); loadTeam(); }
     catch (err) { alert(err.message); }
   });
+  const showBackups = async () => {
+    try {
+      const r = await call('/api/admin/backups');
+      $('#bkInfo').textContent = `${r.backups.length} snapshot${r.backups.length === 1 ? '' : 's'} kept (newest 30). A new one is made every night. ${r.encrypted ? 'Snapshots are encrypted.' : 'Snapshots leave out passwords, private notes and check-ins until the BACKUP_KEY secret is set.'}`;
+      $('#bkList').innerHTML = r.backups.length ? `<ul class="list small">${r.backups.slice(0, 5).map(b => `<li class="mono">${esc(b.key.slice(9, 25).replace('T', ' '))} UTC · ${Math.round((b.bytes || 0) / 1024)} KB${b.encrypted ? ' · encrypted' : ''}</li>`).join('')}</ul>` : '';
+    } catch (err) { $('#bkInfo').textContent = err.message; }
+  };
+  $('#bkNow').onclick = async () => { try { const r = await call('/api/admin/backup', {}); toast(`Backup saved (${Math.round(r.bytes / 1024)} KB)`); showBackups(); } catch (err) { alert(err.message); } };
+  showBackups();
+}
+
+// ---------- facilitator: class report ----------
+// Built from completion and quiz answers only. The report never contains private notes or check-ins.
+let reportId = null, reportData = null;
+async function loadReport() {
+  try { reportData = await call('/api/classes/report?id=' + encodeURIComponent(reportId)); }
+  catch (err) { $('#view').innerHTML = `<div class="page-head"><h1>Class report</h1><p class="msg bad">${esc(err.message)}</p></div>`; return; }
+  if (page !== 'report') return;
+  const r = reportData, m = r.members, n = m.length || 1;
+  const doneOf = u => lessons.filter(l => u.progress[l.id]?.done).length;
+  const complete = m.filter(u => doneOf(u) === lessons.length).length;
+  const quiz = lessons.map(l => {
+    const answers = m.map(u => u.progress[l.id]?.choice).filter(Number.isInteger);
+    const counts = l.choices.map((_, j) => answers.filter(a => a === j).length);
+    return { l, counts, total: answers.length, right: counts[l.correct] };
+  });
+  const answered = quiz.reduce((a, q) => a + q.total, 0), right = quiz.reduce((a, q) => a + q.right, 0);
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const bar = (v, max, cls = '') => `<span class="rbar ${cls}"><i style="width:${max ? Math.round(v / max * 100) : 0}%"></i></span>`;
+  const pollTitle = p => { const [deck, i] = p.id.split(':'); const s = decks[deck]?.[+i]; return { s, where: lessons.find(l => l.id === deck) }; };
+  const byDay = {};
+  for (const p of r.polls) (byDay[p.closedAt.slice(0, 10)] ||= []).push(p);
+  $('#view').innerHTML = `<div class="page-head report-head"><div class="eyebrow">Class report · ${esc(r.class.code || 'no join code')}</div><h1>${esc(r.class.name)}</h1>
+    <p>Generated ${new Date(r.generated).toLocaleString()}. Completion, quiz answers and live poll results only; private notes and check-ins are not included.</p></div>
+  <div class="row no-print"><a class="btn" href="#team">Back to participants</a><button class="btn" id="repCsv">Download CSV</button><button class="btn primary" data-print>Print summary</button></div>
+  <div class="stats rep-stats"><div class="stat"><b>${m.length}</b> <span>enrolled</span></div><div class="stat"><b>${complete}</b> <span>completed the course</span></div><div class="stat"><b>${pct(right, answered)}%</b> <span>quiz answers correct</span></div><div class="stat"><b>${r.polls.length}</b> <span>live polls run</span></div></div>
+  <section class="panel"><h3>Session completion</h3><div class="tbl-wrap flat"><table><caption class="sr">Session completion</caption><thead><tr><th scope="col">Session</th><th scope="col">Completed</th><th scope="col"><span class="sr">Share</span></th></tr></thead><tbody>
+    ${lessons.map(l => { const d = m.filter(u => u.progress[l.id]?.done).length; return `<tr><td><b>${l.n}</b> ${esc(l.title)}</td><td>${d} of ${m.length} (${pct(d, m.length)}%)</td><td>${bar(d, m.length)}</td></tr>`; }).join('')}</tbody></table></div></section>
+  <section class="panel"><h3>Quiz answers by question</h3><p class="small muted">Each session’s decision question. The strongest answer is marked; a large share on another option points to a misconception worth revisiting.</p>
+    ${quiz.map(q => `<div class="rq"><p><b>${q.l.n}</b> ${esc(q.l.scenario)} <span class="muted small">· ${q.total} answered · ${pct(q.right, q.total)}% chose the strongest answer</span></p>
+      <div class="rq-opts">${q.l.choices.map((c, j) => `<div class="rq-opt ${j === q.l.correct ? 'right' : ''}"><span class="lt">${LETTERS[j]}</span> <span class="txt">${esc(c)}${j === q.l.correct ? ' <em>(strongest)</em>' : ''}</span> ${bar(q.counts[j], q.total, j === q.l.correct ? 'ok' : '')} <span class="mono">${q.counts[j]}</span></div>`).join('')}</div></div>`).join('')}</section>
+  <section class="panel"><h3>Participants</h3><div class="tbl-wrap flat"><table><caption class="sr">Participants</caption><thead><tr><th scope="col">Name</th><th scope="col">Login ID</th><th scope="col">Sessions</th><th scope="col">Quiz correct</th><th scope="col">Last completed</th></tr></thead><tbody>
+    ${m.map(u => { const a = lessons.filter(l => Number.isInteger(u.progress[l.id]?.choice)), ok = a.filter(l => u.progress[l.id].choice === l.correct).length, last = Object.values(u.progress).map(v => v.doneAt || '').sort().pop();
+      return `<tr><td>${esc(u.name)}</td><td class="mono">${esc(u.id)}</td><td>${doneOf(u)}/${lessons.length}</td><td>${ok}/${a.length}</td><td>${fmtDate(last)}</td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">No participants.</td></tr>'}</tbody></table></div></section>
+  <section class="panel"><h3>Live poll history</h3>${Object.keys(byDay).length ? Object.entries(byDay).map(([day, polls]) => `<h4>${fmtDate(day)}</h4>${polls.map(p => { const { s, where } = pollTitle(p), max = Math.max(1, ...p.counts);
+      return `<div class="rq"><p><b>${esc(where ? `Session ${where.n}` : p.id)}</b> ${esc(p.q)} <span class="muted small">· ${p.total} response${p.total === 1 ? '' : 's'} · closed ${new Date(p.closedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></p>
+        <div class="rq-opts">${p.o.map((o, j) => `<div class="rq-opt ${s?.t === 'check' && j === s.a ? 'right' : ''}"><span class="lt">${LETTERS[j]}</span> <span class="txt">${esc(o)}</span> ${bar(p.counts[j], max, s?.t === 'check' && j === s.a ? 'ok' : '')} <span class="mono">${p.counts[j]}</span></div>`).join('')}</div></div>`; }).join('')}`).join('') : '<p class="muted">No live polls have been run with this class yet.</p>'}</section>`;
+  $('#repCsv').onclick = () => {
+    const rows = [['Class report', r.class.name], ['Join code', r.class.code || ''], ['Generated', r.generated], [],
+      ['Participants'], ['Name', 'Login ID', 'Sessions completed', 'Quiz answered', 'Quiz strongest answer', 'Last completed', ...lessons.map(l => `S${l.n} done`)],
+      ...m.map(u => { const a = lessons.filter(l => Number.isInteger(u.progress[l.id]?.choice)); return [u.name, u.id, doneOf(u), a.length, a.filter(l => u.progress[l.id].choice === l.correct).length, Object.values(u.progress).map(v => v.doneAt || '').sort().pop() || '', ...lessons.map(l => u.progress[l.id]?.done ? 'yes' : '')]; }),
+      [], ['Session completion'], ['Session', 'Title', 'Completed', 'Enrolled'], ...lessons.map(l => [l.n, l.title, m.filter(u => u.progress[l.id]?.done).length, m.length]),
+      [], ['Quiz answers'], ['Session', 'Question', 'Option', 'Text', 'Strongest', 'Count'], ...quiz.flatMap(q => q.l.choices.map((c, j) => [q.l.n, q.l.scenario, LETTERS[j], c, j === q.l.correct ? 'yes' : '', q.counts[j]])),
+      [], ['Live polls'], ['Closed at', 'Poll', 'Question', 'Option', 'Text', 'Count', 'Total'], ...r.polls.flatMap(p => p.o.map((o, j) => [p.closedAt, p.id, p.q, LETTERS[j], o, p.counts[j], p.total]))];
+    download(`class-report-${(r.class.code || r.class.id).toLowerCase()}.csv`, toCSV(rows));
+  };
+}
+
+// ---------- after the course: action plan, certificate, 30-day check-in, review quiz ----------
+// All of these read only the signed-in person's own data. Nothing here is visible to facilitators.
+const COURSE_TITLE = 'Leadership Lab: a practical two-day leadership course';
+const commitment = () => saved.commitment?.note || '';
+const allDone = () => doneCount() === lessons.length;
+const lastDoneAt = () => lessons.map(l => saved[l.id]?.doneAt || '').sort().pop() || null;
+const longDate = iso => new Date(iso || Date.now()).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+
+function actionHTML() {
+  const notes = lessons.filter(l => saved[l.id]?.note && l.id !== 'commitment');
+  const review = lastDoneAt() ? new Date(new Date(lastDoneAt()).getTime() + 30 * 86400000) : null;
+  return `<div class="page-head"><div class="eyebrow">Only you can see this page</div><h1>Your action plan</h1>
+    <p>Built from your own notes. Print it or save it as a PDF and keep it where you will see it.</p></div>
+  <div class="row no-print"><button class="btn primary" data-print>Print or save as PDF</button><a class="btn" href="#checkin">30-day check-in</a></div>
+  <article class="printable doc">
+    <header><div class="eyebrow">Leadership Lab · personal action plan</div><h2>${esc(me?.name || '')}</h2>
+      <p class="small muted">${me?.className ? esc(me.className) + ' · ' : ''}${doneCount()} of ${lessons.length} sessions completed${review ? ` · review on or after ${longDate(review.toISOString())}` : ''}</p></header>
+    <section><h3>My commitment</h3>${commitment() ? `<p class="commit">${esc(commitment())}</p>` : `<p class="muted">You have not written your commitment yet. Add it in <a href="#s/commitment/notes">Session 12 · Notes</a>.</p>`}</section>
+    <section><h3>What I took from each session</h3>${notes.length ? notes.map(l => `<div class="plan-note"><h4>Session ${l.n} · ${esc(l.title)}</h4><p class="small muted">${esc(l.prompt)}</p><p>${esc(saved[l.id].note)}</p></div>`).join('') : '<p class="muted">No notes yet. Each session’s Notes tab asks one question; your answers appear here.</p>'}</section>
+    <section><h3>Review</h3><p>In 30 days, open <b>${esc(location.host)}/checkin</b>, rate how well you followed through, and set your next commitment.</p>
+      <div class="sign-row"><span>First situation where I will act:</span><span class="line"></span></div><div class="sign-row"><span>Who I will tell:</span><span class="line"></span></div></section>
+  </article>`;
+}
+
+function certificateHTML() {
+  if (!allDone()) {
+    const left = lessons.filter(l => !isDone(l));
+    return `<div class="page-head"><div class="eyebrow">Certificate</div><h1>Not yet</h1><p>Your certificate becomes available when all ${lessons.length} sessions are marked complete. ${left.length} to go:</p></div>
+    <section class="panel"><ul class="list">${left.map(l => `<li><a href="#s/${l.id}/notes">Session ${l.n} · ${esc(l.title)}</a></li>`).join('')}</ul></section>`;
+  }
+  return `<div class="row no-print"><button class="btn primary" data-print>Print or save as PDF</button><a class="btn" href="#account">Back</a></div>
+  <article class="cert printable" aria-label="Certificate of completion">
+    <div class="cert-in"><div class="mark"><i></i>Leadership Lab</div>
+      <p class="eyebrow">Certificate of completion</p><p class="cert-pre">This certifies that</p>
+      <h1 class="cert-name">${esc(me?.name || '')}</h1>
+      <p class="cert-pre">has completed all ${lessons.length} sessions of</p><h2 class="cert-course">${esc(COURSE_TITLE)}</h2>
+      ${me?.className ? `<p class="cert-class">${esc(me.className)}</p>` : ''}
+      <p class="cert-date">Completed ${longDate(lastDoneAt())}</p>
+      <div class="cert-sign"><span><i></i>Facilitator</span><span><i></i>Date</span></div></div>
+  </article>`;
+}
+
+// 30-day check-in: private, like notes.
+let checkins = null;
+function checkinHTML() {
+  const last = checkins?.[checkins.length - 1];
+  const current = last?.next || commitment();
+  return `<div class="page-head"><div class="eyebrow">30-day check-in · private to you</div><h1>How did it go?</h1>
+    <p>Look back at the commitment you made, be honest about how far you got, and set the next one. Your facilitator never sees this page.</p></div>
+  <div class="grid2">
+    <section class="panel"><h3>${last ? 'Your current commitment' : 'The commitment you made'}</h3>
+      ${current ? `<p class="commit">${esc(current)}</p><p class="small muted">${last ? 'Set at your check-in on ' + longDate(last.at) : 'From Session 12'}</p>` : `<p class="muted">You have not written a commitment yet. Add one in <a href="#s/commitment/notes">Session 12 · Notes</a>, or set one below.</p>`}
+      <form id="ciForm" class="list">
+        <fieldset class="rating"><legend>How well did you follow through?</legend>
+          ${[[1, 'Not at all'], [2, 'A little'], [3, 'Partly'], [4, 'Mostly'], [5, 'Fully']].map(([v, t]) => `<label><input type="radio" name="rating" value="${v}" required> <b>${v}</b> <span>${t}</span></label>`).join('')}</fieldset>
+        <div class="field"><label for="ciHelped">What helped?</label><textarea id="ciHelped" rows="3" maxlength="1500"></textarea></div>
+        <div class="field"><label for="ciBlocked">What got in the way?</label><textarea id="ciBlocked" rows="3" maxlength="1500"></textarea></div>
+        <div class="field"><label for="ciNext">Your next commitment</label><textarea id="ciNext" rows="3" maxlength="1500" placeholder="One specific, observable action and when you will do it"></textarea></div>
+        <div class="row"><button class="btn primary">Save check-in</button></div><p class="msg" id="ciMsg" role="status"></p></form></section>
+    <section class="panel"><h3>Earlier check-ins</h3><div id="ciList">${checkins ? ciListHTML() : '<p class="muted">Loading…</p>'}</div></section>
+  </div>`;
+}
+function ciListHTML() {
+  if (!checkins.length) return '<p class="muted">None yet. Your first check-in will appear here.</p>';
+  return checkins.slice().reverse().map(c => `<div class="ci"><p><b>${longDate(c.at)}</b> · follow-through <b>${c.rating}/5</b></p>
+    ${c.helped ? `<p class="small"><b>Helped:</b> ${esc(c.helped)}</p>` : ''}${c.blocked ? `<p class="small"><b>In the way:</b> ${esc(c.blocked)}</p>` : ''}${c.next ? `<p class="small"><b>Next:</b> ${esc(c.next)}</p>` : ''}</div>`).join('');
+}
+async function bindCheckin() {
+  if (!checkins) {
+    try { checkins = (await call('/api/checkins')).checkins; } catch { checkins = []; }
+    if (page === 'checkin') { const box = $('#ciList'); if (box) box.innerHTML = ciListHTML(); }
+    if (page === 'checkin' && checkins.length) { $('#view').innerHTML = checkinHTML(); }
+  }
+  const f = $('#ciForm'); if (!f) return;
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const msg = $('#ciMsg');
+    try {
+      const r = await call('/api/checkins', { rating: +f.rating.value, helped: $('#ciHelped').value, blocked: $('#ciBlocked').value, next: $('#ciNext').value });
+      checkins = r.checkins; $('#view').innerHTML = checkinHTML(); bindCheckin(); toast('Check-in saved');
+    } catch (err) { msg.className = 'msg bad'; msg.textContent = err.message; }
+  };
+}
+
+// Review quiz: a shuffled mix of the session decision questions and the slide quick checks. Scores stay in this
+// browser only, so retaking never changes the answers saved from class.
+const REVIEW_KEY = 'll-review', REVIEW_N = 10;
+let R = null;
+function reviewPool() {
+  const pool = lessons.map(l => ({ from: `Session ${l.n}`, q: l.scenario, o: l.choices, a: l.correct, why: l.reason }));
+  const seen = new Set(pool.map(p => p.q));
+  for (const l of lessons) for (const s of decks[l.id] || []) {
+    if (s.t === 'check' && Array.isArray(s.o) && Number.isInteger(s.a) && !seen.has(s.q)) { seen.add(s.q); pool.push({ from: `Session ${l.n}`, q: s.q, o: s.o, a: s.a, why: s.why || '' }); }
+  }
+  return pool;
+}
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function newReview() {
+  const qs = shuffle(reviewPool()).slice(0, REVIEW_N).map(p => { const order = shuffle(p.o.map((_, j) => j)); return { ...p, order, pick: null }; });
+  R = { qs, i: 0 };
+}
+const reviewHistory = () => { try { return JSON.parse(localStorage.getItem(REVIEW_KEY)) || []; } catch { return []; } };
+function reviewHTML() {
+  if (!R) newReview();
+  const hist = reviewHistory();
+  const head = `<div class="page-head"><div class="eyebrow">Review quiz · practice only</div><h1>Review</h1>
+    <p>${REVIEW_N} questions drawn at random from the whole course, with the options shuffled. Retake it as often as you like: these scores stay on this device and never change the answers you gave in class.</p></div>`;
+  if (R.i >= R.qs.length) {
+    const right = R.qs.filter(q => q.pick === q.a).length;
+    return `${head}<section class="panel"><h3>You chose the strongest answer ${right} of ${R.qs.length} times</h3>
+      <ol class="list">${R.qs.map(q => `<li><p><b>${esc(q.from)}</b> ${esc(q.q)}</p><p class="small ${q.pick === q.a ? 'ok-t' : 'bad-t'}">${q.pick === q.a ? 'Strongest answer' : `You chose: ${esc(q.o[q.pick])}`}${q.pick === q.a ? '' : ` · Strongest: ${esc(q.o[q.a])}`}</p></li>`).join('')}</ol>
+      <div class="row"><button class="btn primary" id="rvAgain">New set of questions</button></div>
+      ${hist.length ? `<p class="small muted">Recent scores on this device: ${hist.slice(-8).map(h => `${h.right}/${h.n}`).join(' · ')}</p>` : ''}</section>`;
+  }
+  const q = R.qs[R.i], answered = q.pick !== null;
+  return `${head}<section class="panel review"><p class="small muted">Question ${R.i + 1} of ${R.qs.length} · ${esc(q.from)}</p><h2 class="live-q">${esc(q.q)}</h2>
+    <div class="live-opts" role="group" aria-label="Answers">${q.order.map((j, k) => `<button class="live-opt${answered && j === q.a ? ' right' : ''}${answered && j === q.pick && j !== q.a ? ' wrong' : ''}" data-rv="${j}" ${answered ? 'disabled' : ''}><b>${LETTERS[k]}</b> <span>${esc(q.o[j])}</span></button>`).join('')}</div>
+    ${answered ? `<div class="why" role="status"><b>${q.pick === q.a ? 'Strongest answer.' : 'Not the strongest answer.'}</b> ${esc(q.why)}</div><div class="row"><button class="btn primary" id="rvNext">${R.i + 1 < R.qs.length ? 'Next question' : 'See results'}</button></div>` : ''}</section>`;
+}
+function bindReview() {
+  $$('[data-rv]').forEach(b => b.onclick = () => { R.qs[R.i].pick = +b.dataset.rv; renderPage(); $('#rvNext')?.focus(); });
+  const next = $('#rvNext');
+  if (next) next.onclick = () => {
+    R.i++;
+    if (R.i >= R.qs.length) { const h = reviewHistory(); h.push({ at: new Date().toISOString(), right: R.qs.filter(q => q.pick === q.a).length, n: R.qs.length }); try { localStorage.setItem(REVIEW_KEY, JSON.stringify(h.slice(-30))); } catch {} }
+    renderPage();
+  };
+  const again = $('#rvAgain'); if (again) again.onclick = () => { newReview(); renderPage(); };
 }
 
 // ---------- session screen ----------
@@ -489,10 +772,11 @@ const pollOptions = s => s.t === 'check' ? s.o : s.t === 'discuss' && s.poll ? s
 const pollId = (l, i) => `${l.id}:${i}`;
 
 // Photo frame: a supplied photo, or a styled placeholder naming the subject and shape still needed.
+// Photos appear only once a real image URL is set in decks.js; until then the slide uses its text layout.
 function photoFrame(p, variant) {
+  if (!p?.src) return '';
   const credit = p.credit ? `<figcaption>${esc(p.credit)}</figcaption>` : '';
-  if (p.src) return `<figure class="ph ${variant}"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy">${credit}</figure>`;
-  return `<figure class="ph ${variant} placeholder" role="img" aria-label="${esc(p.alt)}"><div class="ph-in">${icon('camera', 'ic ph-ic')}<b>Photo to come</b><span>${esc(p.subject)}</span><small>${esc(p.ratio || '3:2 landscape')} · alt: ${esc(p.alt)}</small></div>${credit}</figure>`;
+  return `<figure class="ph ${variant}"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy">${credit}</figure>`;
 }
 
 // One slide. opts: i, picks, step (parts revealed), reveal ('hide' for the audience, 'ghost' for the presenter),
@@ -505,12 +789,12 @@ function slideHTML(l, { i, picks = {}, step = ALL, reveal = 'hide', still = fals
   const lede = s.p ? `<p class="lede">${esc(s.p)}</p>` : '';
   const marker = j => s.ic?.[j] ? icon(s.ic[j], 'ic n') : `<b class="n">${pad(j + (s.from || 1))}</b>`;
   const bullets = items => `<ul class="bul${s.ic ? ' iconic' : ''}">${items.map((t, j) => `<li class="${vis(j)}">${marker(j)} <span>${esc(t)}</span></li>`).join('')}</ul>`;
-  const full = s.photo?.variant === 'full';
+  const full = !!s.photo?.src && s.photo.variant === 'full';
   let body;
   switch (s.t) {
     case 'cover': {
       const text = `<div class="cv-center"><div class="kick">Phase ${phaseNo(l)} · ${esc(phaseOf(l).name)} · Session ${l.n}</div><h1>${esc(l.title)}</h1><p class="lede">${esc(l.intro.split(/(?<=\.)\s/)[0])}</p><span class="bar"></span></div>`;
-      body = s.photo && !full ? `<div class="split">${text}${photoFrame(s.photo, 'split')}</div>` : text; break;
+      body = s.photo?.src && !full ? `<div class="split">${text}${photoFrame(s.photo, 'split')}</div>` : text; break;
     }
     case 'section': {
       const parts = s.parts || d.filter(x => x.t === 'section').map(x => x.h), idx = s.part ? s.part - 1 : Math.max(0, parts.indexOf(s.h));
@@ -590,7 +874,7 @@ function classTab(l) {
   if (L.mode === 'presenter') return presenterHTML(l);
   const d = deckOf(l), s = d[L.slide], pres = L.mode === 'pres', steps = stepsOf(s);
   return `<div class="stage-wrap" id="stageWrap">
-    <div class="thumbs" role="tablist" aria-label="Slides">${d.map((x, i) => `<button class="${i === L.slide ? 'on' : ''}" data-slide="${i}" aria-selected="${i === L.slide}"><b>${pad(i + 1)}</b> ${esc(thumbLabel(l, x))}</button>`).join('')}</div>
+    <div class="thumbs" role="group" aria-label="Slides">${d.map((x, i) => `<button class="${i === L.slide ? 'on' : ''}" data-slide="${i}" ${i === L.slide ? 'aria-current="true"' : ''}><b>${pad(i + 1)}</b> ${esc(thumbLabel(l, x))}</button>`).join('')}</div>
     <div class="stage-host${pres ? ' fill' : ''}">${slideHTML(l, { i: L.slide, picks: L.picks, step: L.step, reveal: pres ? 'hide' : 'ghost', fit: pres ? 'box' : 'width' })}</div>
     ${pres && L.notes ? `<div class="pres-notes"><b>Facilitator note</b> ${esc(s.n)}</div>` : ''}
     ${deckBar(l)}
@@ -760,8 +1044,10 @@ function broadcastTimers() { if (chan && L && L.mode === 'presenter') chan.postM
 // signed-in participants; moving to another slide closes it. Results are fetched every 1.5 seconds.
 let pollLoop = null, pollBusy = false;
 const canPoll = () => !!(me?.admin && L && (L.mode === 'presenter' || L.mode === 'pres'));
+// Facilitators choose which class they are presenting to; each class has its own poll room.
+const pollClass = () => { try { return localStorage.getItem('ll-present-class') || ''; } catch { return ''; } };
 async function pollControl(action, poll) {
-  try { return await call('/api/poll/control', { action, poll }); }
+  try { return await call('/api/poll/control', { action, poll, classId: pollClass() || 'unassigned' }); }
   catch (e) { toast(e.message); return null; }
 }
 function syncPoll(l) {
@@ -780,7 +1066,7 @@ async function refreshPoll() {
   if (!L?.pollOpen || pollBusy) return;
   pollBusy = true;
   try {
-    const r = await call('/api/poll/results?id=' + encodeURIComponent(L.pollOpen));
+    const r = await call('/api/poll/results?id=' + encodeURIComponent(L.pollOpen) + '&class=' + encodeURIComponent(pollClass() || 'unassigned'));
     if (L?.pollOpen === r.id) { L.poll = r; applyPoll(document, r); updatePollControls(); broadcastPoll(); }
   } catch {}
   pollBusy = false;
@@ -823,12 +1109,25 @@ function pollControlsHTML(l, compact) {
   const s = deckOf(l)[L.slide];
   if (!me?.admin || !pollOptions(s)) return '';
   const btns = `<button class="btn sm" id="pollShow">Show results</button><button class="btn sm" id="pollLock">Lock voting</button>${compact ? '' : '<button class="btn sm danger" id="pollReset">Reset votes</button>'}`;
-  return compact ? btns : `<section class="panel"><h3>Live poll</h3><p class="small"><b id="pollCount">Opening…</b></p><p class="small muted">Participants vote at <b>${esc(location.host)}/#live</b> while this slide is showing.</p><div class="row">${btns}</div></section>`;
+  return compact ? btns : `<section class="panel"><h3>Live poll</h3><p class="small"><b id="pollCount">Opening…</b></p><p class="small muted">Participants vote at <b>${esc(location.host)}/#live</b> while this slide is showing.</p>
+    <div class="field"><label for="pollClassSel" class="small">Presenting to</label><select id="pollClassSel"><option value="">Participants with no class</option></select></div><div class="row">${btns}</div></section>`;
 }
 function bindPollControls() {
   $('#pollShow') && ($('#pollShow').onclick = () => pollAction(L.poll?.show ? 'hide' : 'show'));
   $('#pollLock') && ($('#pollLock').onclick = () => pollAction(L.poll?.locked ? 'unlock' : 'lock'));
   $('#pollReset') && ($('#pollReset').onclick = () => { if (confirm('Clear every vote on this question?')) pollAction('reset'); });
+  const sel = $('#pollClassSel');
+  if (sel) loadClasses().then(d => {
+    const cur = pollClass();
+    sel.innerHTML = `<option value="">Participants with no class</option>` + d.classes.filter(c => c.status === 'active' || c.id === cur).map(c => `<option value="${esc(c.id)}" ${c.id === cur ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    sel.onchange = () => {
+      // Close the poll in the old class's room, then reopen this slide's poll in the new one.
+      const was = L?.pollOpen; if (was) pollControl('close');
+      try { localStorage.setItem('ll-present-class', sel.value); } catch {}
+      if (was && L) { L.pollOpen = null; syncPoll(lessonOf(L.id)); }
+      toast('Polls now go to ' + (sel.selectedOptions[0]?.textContent || 'this class'));
+    };
+  }).catch(() => {});
 }
 
 // ----- projector window: only the slide, letterboxed, following the presenter view -----
@@ -955,6 +1254,8 @@ window.addEventListener('beforeunload', () => { if (pending.size) flush(); });
 
 // ---------- start ----------
 async function start() {
+  // /checkin is the short address printed on the action plan.
+  if (location.pathname === '/checkin') history.replaceState(null, '', '/#checkin');
   const pm = location.hash.match(/^#proj\/([a-z_]+)/);
   if (pm && decks[pm[1]]) { startProjector(pm[1]); return; }
   route();

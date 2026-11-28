@@ -1,0 +1,58 @@
+// Server-rendered pages: sign in, join a class with a code, and the hand-off page after signing in.
+import { esc, html } from './lib.js';
+
+const MARK = `<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#142440"/><circle cx="32" cy="32" r="19" fill="none" stroke="#C99A3E" stroke-width="3"/><path d="M25 21v22h15" fill="none" stroke="#F3D58F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const STYLE = `<style>
+:root{--ink:#16213A;--ink2:#4F5B72;--paper:#E4E9F0;--card:#fff;--navy:#13223F;--gold:#7A570F;--bad:#A3312A;--line:#C9D1DC}
+@media (prefers-color-scheme:dark){:root{--ink:#E5EAF2;--ink2:#A3AFC2;--paper:#0C1422;--card:#132036;--gold:#E0AE4C;--bad:#F08A80;--line:#2E3F5C}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+main{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 24px;box-shadow:0 10px 30px rgba(20,36,64,.08)}
+.brand{display:flex;gap:12px;align-items:center;margin-bottom:20px}.brand svg{width:44px;height:44px;flex:none}
+.brand p{margin:0}.brand small{display:block;color:var(--gold);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}.brand b{font-size:1.25rem}
+h1{font-size:1.1rem;margin:0 0 4px}
+label{display:block;font-weight:600;font-size:.86rem;margin:14px 0 6px}input{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button{margin-top:20px;width:100%;font:inherit;font-weight:700;padding:12px;border:0;border-radius:10px;background:var(--navy);color:#fff;cursor:pointer}
+@media (prefers-color-scheme:dark){button{background:var(--gold);color:#142440}}
+.err{background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad);border-radius:10px;padding:10px 12px;font-size:.88rem;margin-bottom:6px}
+p.note{color:var(--ink2);font-size:.85rem;margin:18px 0 0}p.note a{color:var(--gold);font-weight:600}
+.hint{color:var(--ink2);font-size:.8rem;margin:4px 0 0}
+</style>`;
+const head = title => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title} · Leadership Lab</title><meta name="theme-color" content="#142440"><link rel="icon" href="/assets/icon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest">${STYLE}</head><body><main>
+<div class="brand">${MARK}<p><small>Leadership training</small><b>Leadership Lab</b></p></div>`;
+
+export function loginPage({ error = '', id = '', next = '/', current = '' } = {}) {
+  return html(`${head('Sign in')}<h1>Sign in</h1>
+${error ? `<div class="err" role="alert">${esc(error)}</div>` : ''}
+<form method="post" action="/login"><input type="hidden" name="next" value="${esc(next)}">
+<label for="login">Login ID</label><input id="login" name="login" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required value="${esc(id)}" ${id ? '' : 'autofocus'}>
+<label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required ${id ? 'autofocus' : ''}>
+<button type="submit">Sign in</button></form>
+${current ? `<p class="note">You're signed in as <b>${esc(current)}</b>. Sign in with another login to switch, or <a href="/">go back to the course</a>.</p>` : ''}
+<p class="note">Have a join code from your facilitator? <a href="/join">Create your account</a>.</p>
+<p class="note">Forgot your password? Ask your facilitator.</p>
+</main></body></html>`, 401);
+}
+
+export function joinPage({ error = '', code = '', name = '', id = '' } = {}) {
+  return html(`${head('Join a class')}<h1>Join your class</h1><p class="hint">Use the join code your facilitator gave you to create your own login.</p>
+${error ? `<div class="err" role="alert">${esc(error)}</div>` : ''}
+<form method="post" action="/join">
+<label for="code">Join code</label><input id="code" name="code" required autocapitalize="characters" autocomplete="off" spellcheck="false" value="${esc(code)}" ${code ? '' : 'autofocus'} placeholder="e.g. LL-7KQ">
+<label for="name">Your name</label><input id="name" name="name" required maxlength="80" autocomplete="name" value="${esc(name)}">
+<label for="login">Choose a login ID</label><input id="login" name="login" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" value="${esc(id)}" aria-describedby="login-hint"><p class="hint" id="login-hint">3 to 64 lowercase letters, digits or . _ - @</p>
+<label for="password">Choose a password</label><input id="password" name="password" type="password" required minlength="8" autocomplete="new-password" aria-describedby="pw-hint"><p class="hint" id="pw-hint">At least 8 characters.</p>
+<label for="confirm">Type the password again</label><input id="confirm" name="confirm" type="password" required minlength="8" autocomplete="new-password">
+<button type="submit">Create my account</button></form>
+<p class="note">Already have a login? <a href="/login">Sign in</a>.</p>
+</main></body></html>`, error ? 400 : 200);
+}
+
+// The session cookie goes on an ordinary page that then moves on, not on a redirect: several iPhone browsers can drop
+// a cookie set on a redirect. A meta refresh moves on (no inline script, so the strict CSP holds).
+export function signedInPage(next, setCookie) {
+  return html(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signing in…</title><meta http-equiv="refresh" content="0;url=${esc(next)}"><style>body{font:15px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#E4E9F0;color:#16213A}a{color:#13223F}</style></head>
+<body><main><p>Signing in… <a href="${esc(next)}">Continue</a></p></main></body></html>`, 200, { 'Set-Cookie': setCookie });
+}
